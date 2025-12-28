@@ -152,7 +152,17 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
 
-bot = commands.Bot(command_prefix="/", intents=intents, help_command=None)
+class MyBot(commands.Bot):
+    async def setup_hook(self):
+        guild = discord.Object(id=GUILD_ID)
+
+        # (optionnel mais recommandé)
+        self.tree.copy_global_to(guild=guild)
+
+        await self.tree.sync(guild=guild)
+        logger.info(f"✅ Slash commands synchronisées sur la guilde {GUILD_ID}")
+
+bot = MyBot(command_prefix="/", intents=intents, help_command=None)
 custom_commands = {}
 command_cooldowns = defaultdict(lambda: 0)
 COMMAND_COOLDOWN = 3
@@ -255,7 +265,6 @@ warns_data = load_warns()
 
 @bot.event
 async def on_ready():
-    """
     logger.info(f"✅ Bot connecté en tant que {bot.user}")
 
     try:
@@ -267,87 +276,28 @@ async def on_ready():
 
     load_custom_commands()
 
-    try:
-        if GUILD_ID:
-            guild_id = int(GUILD_ID)
-
-            # Attendre que le bot soit prêt pour accéder au cache
-            await bot.wait_until_ready()
-
-            # Tente de récupérer la guilde depuis le cache
-            guild_obj = bot.get_guild(guild_id)
-
-            # Si la guilde n’est pas encore dans le cache, la récupérer depuis l’API
-            if guild_obj is None:
-                try:
-                    guild_obj = await bot.fetch_guild(guild_id)
-                    logger.debug(f"Guilde récupérée depuis l’API : {guild_obj.name}")
-                except Exception as e:
-                    logger.warning(f"Impossible de récupérer la guilde {guild_id} : {e}")
-                    guild_obj = discord.Object(id=guild_id)
-
-            # Suppression des anciennes commandes
-            await bot.tree.sync(guild=guild_obj)
-            logger.info(f"✅ Commandes synchronisées sur la guilde {guild_obj.name} ({GUILD_ID})")
-
-            # Synchronisation des commandes pour la guilde
-            await bot.tree.sync(guild=guild_obj)
-            guild_name = getattr(guild_obj, "name", "Inconnue")
-            logger.info(f"✅ Commandes synchronisées sur la guilde : {guild_name} | ID: {GUILD_ID}")
-
-        else:
-            # Synchronisation globale (aucune guilde définie)
-            await bot.tree.sync()
-            logger.info("✅ Commandes globales synchronisées")
-
-    except Exception as e:
-        logger.error(f"Erreur synchronisation commandes : {e}")
-"""
-
-    guild = bot.get_guild(GUILD_ID)
-    if guild is None:
-        print("Erreur : le bot n'a pas accès à la guild")
-        return
-    await bot.tree.sync(guild=guild)
-    print(f"Bot connecté : {bot.user} - commandes synchronisées sur la guild {guild.name}")
-
     if CHANNEL_ID_NOTIF:
-        try:
-            channel = bot.get_channel(int(CHANNEL_ID_NOTIF))
-            if channel:
-                embed = discord.Embed(
-                    title=lang_manager.get("bot_online_title"),
-                    description=lang_manager.get("bot_online_description"),
-                    color=discord.Color.pink()
-                )
-
-                embed.add_field(name="Date", value=datetime.now().strftime("%Y-%m-%d"), inline=True)
-                embed.add_field(name="Heure", value=datetime.now().strftime("%H:%M:%S"), inline=True)
-                embed.add_field(name="Version", value=VERSION, inline=True)
-                
-                embed.set_footer(text=lang_manager.get("bot_online_footer", end = time.perf_counter() - start))
-
-                await channel.send(embed=embed)
-                logger.info(f"✅ Message envoyé dans le salon: {channel} | ID: {CHANNEL_ID_NOTIF}")
-            else:
-                logger.warning("⚠️ CHANNEL_ID_NOTIF introuvable ou non valide.")
-        except Exception as e:
-            logger.error(f"❌ Impossible d'envoyer la notification de démarrage : {e}")
-
-    try:
-        channel = bot.get_channel(int(1417564003760082978))
+        channel = bot.get_channel(int(CHANNEL_ID_NOTIF))
         if channel:
             embed = discord.Embed(
-                title=lang_manager.get("Joyeux Noël !"),
-                description=lang_manager.get("J'espère que vos cadeaux vous plaisent ! 🎁"),
-                color=discord.Color.red()
+                title=lang_manager.get("bot_online_title"),
+                description=lang_manager.get("bot_online_description"),
+                color=discord.Color.pink()
             )
+
+            embed.add_field(name="Date", value=datetime.now().strftime("%Y-%m-%d"), inline=True)
+            embed.add_field(name="Heure", value=datetime.now().strftime("%H:%M:%S"), inline=True)
+            embed.add_field(name="Version", value=VERSION, inline=True)
+
+            embed.set_footer(
+                text=lang_manager.get(
+                    "bot_online_footer",
+                    end=time.perf_counter() - start
+                )
+            )
+
             await channel.send(embed=embed)
-            logger.info(f"✅ Message envoyé dans le salon: {channel} | ID: {CHANNEL_ID_NOTIF}")
-        else:
-            logger.warning("⚠️ CHANNEL_ID_NOTIF introuvable ou non valide.")
-    except Exception as e:
-        logger.error(f"❌ Impossible d'envoyer la notification de démarrage : {e}")
+            logger.info(f"✅ Message de démarrage envoyé")
 
 @bot.event
 async def on_message(message):
@@ -482,20 +432,39 @@ async def list_commands(interaction: discord.Interaction):
 @app_commands.describe(name="Nom de la commande", response="Réponse du bot")
 async def create_command(interaction: discord.Interaction, name: str, response: str):
     user = interaction.user
-    name = interaction.command.name
+
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+
     name_lower = name.lower().strip()
+
     if name_lower in custom_commands:
-        await interaction.response.send_message(t("create_exists", interaction, name=name_lower), ephemeral=EPHEMERAL_GLOBAL
-)
+        await interaction.response.send_message(
+            t(
+                "create_exists",
+                interaction,
+                name=name_lower
+            ),
+            ephemeral=EPHEMERAL_GLOBAL
+        )
         return
     custom_commands[name_lower] = response.strip()
     if save_custom_commands():
-        await interaction.response.send_message(t("create_success", interaction, name=name_lower), ephemeral=EPHEMERAL_GLOBAL
-)
+        await interaction.response.send_message(
+            t(
+                "create_success",
+                interaction,
+                name=name_lower
+            ),
+            ephemeral=EPHEMERAL_GLOBAL
+        )
     else:
-        await interaction.response.send_message(t("create_error", interaction), ephemeral=EPHEMERAL_GLOBAL
-)
+        await interaction.response.send_message(
+            t(
+                "create_error",
+                interaction
+            ),
+            ephemeral=EPHEMERAL_GLOBAL
+        )
 
 @bot.tree.command(name="modif", description="Modifie le nom et/ou la réponse d'une commande personnalisée")
 @app_commands.describe(
@@ -717,8 +686,7 @@ async def logs_command(interaction: discord.Interaction):
     user = interaction.user
     name = interaction.command.name
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
-    await interaction.response.defer(ephemeral=EPHEMERAL_GLOBAL
-)
+    await interaction.response.defer(ephemeral=EPHEMERAL_GLOBAL)
     try:
         log_files = sorted(LOGS_DIR.glob("bot_*.log"), reverse=True)
         if not log_files:
