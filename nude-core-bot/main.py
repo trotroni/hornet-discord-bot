@@ -6,7 +6,7 @@ Nécessite: discord.py 2.x, python-dotenv
 Installation: pip install discord.py python-dotenv
 """
 
-# =========================
+"""========================
 # IMPORTS
 # =========================
 import os
@@ -25,8 +25,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-
-# =========================
+"""# IMPORTS
+"""========================
 # Chemins des fichiers
 # =========================
 BASE_DIR = Path(__file__).parent
@@ -40,13 +40,13 @@ LOGS_DIR.mkdir(exist_ok=True)
 LANG_DIR.mkdir(exist_ok=True)
 COMMANDS_CSV.touch(exist_ok=True)
 WARN_FILE.touch(exist_ok=True)
-
-# =========================
+"""# Chemins des fichiers
+"""========================
 # lancement chrono
 # =========================
 start = time.perf_counter()
-
-# =========================
+"""# lancement chrono
+"""========================
 # LOGGING
 # =========================
 log_filename = LOGS_DIR / f"bot.{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
@@ -59,8 +59,8 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger("DiscordBot")
-
-# =========================
+"""# LOGGING
+"""========================
 # CONFIGURATION ET INITIALISATION
 # =========================
 load_dotenv(dotenv_path="../var.env")
@@ -95,12 +95,11 @@ elif ephemeral_env not in ["true", "false"]:
     raise ValueError("❌ EPHEMERAL_GLOBAL doit être 'true' ou 'false'")
 
 logger.info(f"✅ Configuration chargée: GUILD_ID={GUILD_ID}, CHANNEL_ID_NOTIF={CHANNEL_ID_NOTIF}, ADMIN_ROLE_ID={ADMIN_ROLE_ID}, DEFAULT_LANGUAGE={DEFAULT_LANGUAGE}, EPHEMERAL_GLOBAL={EPHEMERAL_GLOBAL}")
-
-# =========================
+"""# CONFIGURATION ET INITIALISATION
+"""========================
 # GESTION DES LANGUES
 # =========================
 class LanguageManager:
-    """Gestionnaire de traductions multilingues"""
     def __init__(self):
         self.translations = {}
         self.available_languages = []
@@ -158,8 +157,8 @@ class LanguageManager:
         return self.translations.get(lang_code, {}).get("language_name", lang_code)
 
 lang_manager = LanguageManager()
-
-# =========================
+"""# GESTION DES LANGUES
+"""========================
 # INITIALISATION DU BOT
 # =========================
 intents = discord.Intents.default()
@@ -180,8 +179,8 @@ bot = MyBot(command_prefix="/", intents=intents, help_command=None)
 custom_commands = {}
 command_cooldowns = defaultdict(lambda: 0)
 COMMAND_COOLDOWN = 3
-
-# =========================
+"""# INITIALISATION DU BOT
+"""========================
 # UTILITAIRES
 # =========================
 def t(key: str, interaction: discord.Interaction = None, **kwargs) -> str:
@@ -211,10 +210,9 @@ async def check_command_cooldown(user_id: int, channel) -> bool:
     return True
 
 def get_ephemeral(interaction: discord.Interaction, default: bool = True) -> bool:
-    """Renvoie True si le message doit être éphémère."""
     return EPHEMERAL_GLOBAL if interaction else default
-
-# =========================
+"""# UTILITAIRES
+"""========================
 # COMMANDES CSV
 # =========================
 def load_custom_commands():
@@ -243,8 +241,8 @@ def save_custom_commands():
     except Exception as e:
         logger.error(f"❌ Erreur sauvegarde CSV : {e}")
         return False
-
-# =========================
+"""# COMMANDES CSV
+"""========================
 # MODÉRATION
 # =========================
 WARN_LIMIT = 2
@@ -272,8 +270,8 @@ def save_warns(warns):
         logger.error(f"Erreur sauvegarde warns: {e}")
 
 warns_data = load_warns()
-
-# =========================
+"""# MODÉRATION
+"""========================
 # ÉVÉNEMENTS
 # =========================
 @bot.event
@@ -343,8 +341,8 @@ async def on_message(message):
             finally:
                 logger.info(f"Commande inconnue: {command_name}")
     await bot.process_commands(message)
-
-# =========================
+"""# ÉVÉNEMENTS
+"""========================
 # COMMANDES SLASH
 # =========================
 # --------- Ping / Info / Help ---------
@@ -706,7 +704,7 @@ async def logs_command(interaction: discord.Interaction):
 
 # --------- Système ---------
 
-@bot.tree.command(name="reboot", description="Redémarre le bot") 
+@bot.tree.command(name="reboot", description="Redémarre le bot")
 async def reboot_command(interaction: discord.Interaction):
     cmd_user = interaction.user
     cmd_name = interaction.command.name
@@ -787,9 +785,10 @@ async def test_command(interaction: discord.Interaction):
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
     await interaction.response.send_message("✅ Test réussi!", ephemeral=EPHEMERAL_GLOBAL
 )
-
-# =========================
+"""# COMMANDES SLASH
+"""========================
 # LANCEMENT DU BOT
 # =========================
 if __name__ == "__main__":
     bot.run(NUDE_CORE_TOKEN)
+"""# LANCEMENT DU BOT
