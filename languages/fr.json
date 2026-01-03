@@ -1,10 +1,12 @@
 {
   "info": {
-    "response": "Version : {version} | Auteur : {autor}",
     "version": "Version",
     "author": "Auteur",
     "date": "Date de sortie",
-    "ping": "Pong ! {time}",
+    "ping": {
+      "response": "Pong ! {time}",
+      "footer": "Réponse en {end:.2f} ms"
+    },
     "don_t_understand": "❌ Je ne comprends pas la commande `{command_name}`."
   },
 
@@ -13,7 +15,7 @@
       "general": "❌ Permission refusée.",
       "command": "⚠️ Vous n'avez pas la permission d'utiliser cette commande.",
       "role": "⚠️ Vous n'avez pas le rôle requis pour utiliser cette commande."
-    },
+    }
   },
   "help": {
     "title": "📚 Aide - Commandes disponibles",
@@ -24,7 +26,7 @@
     "ping": "Teste la réactivité du bot",
     "reboot": "Redémarre le serveur (admin)",
     "upgrade": "Met à jour et relance le bot (admin)",
-    "bot_update": "Envoie une notification de mise à jour (admin)",
+    "update": "Envoie une notification de mise à jour (admin)",
     "create": "Crée une nouvelle commande personnalisée",
     "modif": "Modifie/renomme une commande existante",
     "delete": "Supprime une commande personnalisée",
@@ -33,54 +35,54 @@
     "language": "Change la langue du bot"
   },
   "list": {
-    "list_title": "📋 Commandes personnalisées",
-    "list_empty": "📋 Aucune commande personnalisée n'est actuellement enregistrée.",
-    "list_footer": "Total : {count} commande(s)"
+    "title": "📋 Commandes personnalisées",
+    "empty": "📋 Aucune commande personnalisée n'est actuellement enregistrée.",
+    "footer": "Total : {count} commande(s)"
   },
   "create": {
-    "create_exists": "⚠️ La commande `/{name}` existe déjà. Utilisez `/modif` pour la modifier.",
-    "create_success": "✅ Commande créée avec succès !",
-    "create_error": "❌ Erreur lors de la sauvegarde de la commande."
+    "exists": "⚠️ La commande `/{name}` existe déjà. Utilisez `/modif` pour la modifier.",
+    "success": "✅ Commande créée avec succès !",
+    "error": "❌ Erreur lors de la sauvegarde de la commande."
   },
   "reload": {
-    "reload_success": "✅ Commandes rechargées ! {count} commande(s) disponible(s).",
-    "reload_error": "❌ Erreur lors du rechargement : {error}"
+    "success": "✅ Commandes rechargées ! {count} commande(s) disponible(s).",
+    "error": "❌ Erreur lors du rechargement : {error}"
   },
   "upgrade": {
-    "upgrade_updating": "🔄 Mise à jour du bot en cours...",
-    "upgrade_success": "✅ Mise à jour effectuée !\n```\n{output}\n```\nRelance du bot...",
-    "upgrade_restarting": "♻️ Redémarrage du bot après mise à jour...",
-    "upgrade_timeout": "❌ Timeout lors de la mise à jour.",
-    "upgrade_error": "❌ Erreur : {error}"
+    "updating": "🔄 Mise à jour du bot en cours...",
+    "success": "✅ Mise à jour effectuée !\n```\n{output}\n```\nRelance du bot...",
+    "restarting": "♻️ Redémarrage du bot après mise à jour...",
+    "timeout": "❌ Timeout lors de la mise à jour.",
+    "error": "❌ Erreur : {error}"
   },
   "reboot": {
-    "reboot_message": "🔄 Redémarrage du serveur en cours...",
-    "reboot_error": "❌ Erreur lors du redémarrage : {error}"
+    "message": "🔄 Redémarrage du serveur en cours...",
+    "error": "❌ Erreur lors du redémarrage : {error}"
   },
   "bot": {
-    "bot_update_sent": "✅ Notification envoyée !",
-    "bot_update_not_configured": "⚠️ CHANNEL_ID_NOTIF n'est pas configuré.",
-    "bot_update_channel_not_found": "❌ Salon introuvable.",
-    "bot_update_notification": "🔔 Notification de mise à jour du bot !",
-    "bot_update_error": "❌ Erreur : {error}",
-    "bot_online_title": "NUDE est en ligne !",
-    "bot_online_description": "Toutes les configurations sont chargées !",
-    "bot_online_footer": "Démarrage réussi en {end:.2f} secondes."
+    "update_sent": "✅ Notification envoyée !",
+    "update_not_configured": "⚠️ CHANNEL_ID_NOTIF n'est pas configuré.",
+    "update_channel_not_found": "❌ Salon introuvable.",
+    "update_notification": "🔔 Notification de mise à jour du bot !",
+    "update_error": "❌ Erreur : {error}",
+    "online_title": "NUDE est en ligne !",
+    "online_description": "Toutes les configurations sont chargées !",
+    "online_footer": "Démarrage réussi en {end:.2f} secondes."
   },
   "language": {
-    "language_name": "Français",
-    "language_title": "🌍 Langue du bot",
-    "language_changed": "✅ Langue changée en **{language}** !",
-    "language_current": "Langue actuelle : **{language}**",
-    "language_available": "Langues disponibles :",
-    "language_usage": "Utilisez /language <code> pour changer de langue",
-    "language_invalid": "❌ Langue `{lang}` non disponible. Utilisez `/language` pour voir les langues disponibles."
+    "name": "Français",
+    "title": "🌍 Langue du bot",
+    "changed": "✅ Langue changée en **{language}** !",
+    "current": "Langue actuelle : **{language}**",
+    "available": "Langues disponibles :",
+    "usage": "Utilisez /language <code> pour changer de langue",
+    "invalid": "❌ Langue `{lang}` non disponible. Utilisez `/language` pour voir les langues disponibles."
   },
   "modif": {
-    "modif_not_found": "❌ La commande personnalisée `{name}` n'existe pas.",
-    "modif_no_change": "⚠️ Aucun changement spécifié pour la commande `{name}`.",
-    "modif_name_exists": "❌ Une autre commande du nom `{name}` existe déjà.",
-    "modif_success": "✅ La commande personnalisée `{name}` a été mise à jour avec succès.",
-    "modif_error": "⚠️ Une erreur est survenue lors de la mise à jour de la commande `{name}`."
+    "not_found": "❌ La commande personnalisée `{name}` n'existe pas.",
+    "no_change": "⚠️ Aucun changement spécifié pour la commande `{name}`.",
+    "name_exists": "❌ Une autre commande du nom `{name}` existe déjà.",
+    "success": "✅ La commande personnalisée `{name}` a été mise à jour avec succès.",
+    "error": "⚠️ Une erreur est survenue lors de la mise à jour de la commande `{name}`."
   }
 }

@@ -31,7 +31,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).parent
 COMMANDS_CSV = BASE_DIR / "commands.csv"
 LOGS_DIR = BASE_DIR / "logs"
-LANG_DIR = BASE_DIR / "languages"
+LANG_DIR = BASE_DIR.parent / "languages"
 WARN_FILE = BASE_DIR / "warns.csv"
 
 # Créer les dossiers/fichiers si nécessaires
@@ -46,7 +46,7 @@ start = time.perf_counter()
 # ========================================
 # LOGGING
 # ========================================
-log_filename = LOGS_DIR / f"bot_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+log_filename = LOGS_DIR / f"bot.{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -108,6 +108,9 @@ class LanguageManager:
         self.translations.clear()
         self.available_languages.clear()
         files = list(LANG_DIR.glob("*.json"))
+        print("LANG_DIR =", LANG_DIR)
+        print("Existe :", LANG_DIR.exists())
+        print("Fichiers :", list(LANG_DIR.glob("*.json")))
         if not files:
             logger.error(f"❌ Aucun fichier de langue dans {LANG_DIR}")
             raise FileNotFoundError("Aucun fichier de traduction")
@@ -127,12 +130,21 @@ class LanguageManager:
         lang = self.user_preferences.get(user_id, DEFAULT_LANGUAGE)
         if lang not in self.translations:
             lang = DEFAULT_LANGUAGE
-        translation = self.translations.get(lang, {}).get(key, f"[{key}]")
+
+        data = self.translations.get(lang, {})
+        for part in key.split("."):
+            if not isinstance(data, dict):
+                return f"[{key}]"
+            data = data.get(part)
+
+        if data is None:
+            return f"[{key}]"
+
         try:
-            return translation.format(**kwargs)
+            return data.format(**kwargs)
         except KeyError as e:
             logger.warning(f"⚠️ Variable manquante pour '{key}': {e}")
-            return translation
+            return data
 
     def set_user_language(self, user_id: int, language: str) -> bool:
         if language in self.available_languages:
@@ -280,8 +292,8 @@ async def on_ready():
         channel = bot.get_channel(int(CHANNEL_ID_NOTIF))
         if channel:
             embed = discord.Embed(
-                title=lang_manager.get("bot_online_title"),
-                description=lang_manager.get("bot_online_description"),
+                title=lang_manager.get("bot.online_title"),
+                description=lang_manager.get("bot.online_description"),
                 color=discord.Color.pink()
             )
 
@@ -291,7 +303,7 @@ async def on_ready():
 
             embed.set_footer(
                 text=lang_manager.get(
-                    "bot_online_footer",
+                    "bot.online_footer",
                     end=time.perf_counter() - start
                 )
             )
@@ -335,18 +347,25 @@ async def on_message(message):
 # ========================================
 # COMMANDES SLASH
 # ========================================
+start = time.perf_counter()
 
 # --------- Ping / Info / Help ---------
 @bot.tree.command(name="ping", description="Teste la réactivité du bot")
 async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        t(
-            "ping_response",
-            interaction,
-            time=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        ),
-        ephemeral=EPHEMERAL_GLOBAL
+    time =
+    embed = discord.Embed(
+        title=t(f"info.ping.response"),
+        description=t("bot.online_description"),
+        color=discord.Color.pink()
     )
+    embed.set_footer(
+        text=t(
+            "info.ping.footer",
+            end=time.perf_counter() - start
+        )
+    )
+
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="info", description="Info sur le bot")
 async def info(interaction: discord.Interaction):
@@ -355,7 +374,7 @@ async def info(interaction: discord.Interaction):
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
     await interaction.response.send_message(
         t(
-            "info_response",
+            "info.response",
             interaction,
             version=VERSION
         ),
@@ -369,7 +388,7 @@ async def help_command(interaction: discord.Interaction):
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
     embed = discord.Embed(title=t("help_title", interaction), color=discord.Color.blue())
     embed.add_field(name=t("help_system", interaction),
-                    value=f"🟢 `/ping`\n🟡 `/reboot`\n🟡 `/upgrade`\n🟡 `/bot_update`",
+                    value=f"🟢 `/ping`\n🟡 `/reboot`\n🟡 `/upgrade`\n🟡 `/bot.update`",
                     inline=False)
     embed.add_field(name=t("help_csv", interaction),
                     value=f"🟢 `/create`\n🟢 `/modif`\n🟢 `/delete`\n🟢 `/list`\n🟢 `/reload_commands`",
@@ -688,7 +707,7 @@ async def logs_command(interaction: discord.Interaction):
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
     await interaction.response.defer(ephemeral=EPHEMERAL_GLOBAL)
     try:
-        log_files = sorted(LOGS_DIR.glob("bot_*.log"), reverse=True)
+        log_files = sorted(LOGS_DIR.glob("bot.*.log"), reverse=True)
         if not log_files:
             await interaction.followup.send("❌ Aucun fichier de log trouvé.", ephemeral=EPHEMERAL_GLOBAL
 )
