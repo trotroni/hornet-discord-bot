@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Bot Discord complet avec commandes CSV, multilingue, modération et logs
-Nécessite: discord.py 2.x, python-dotenv
-Installation: pip install discord.py python-dotenv
-"""
-
 """========================
 # IMPORTS
 # =========================
@@ -58,8 +50,9 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger("DiscordBot")
+logger = logging.getLogger("nude-core-bot")
 """# LOGGING
+
 """========================
 # CONFIGURATION ET INITIALISATION
 # =========================
@@ -68,31 +61,36 @@ load_dotenv(dotenv_path="../var.env")
 NUDE_CORE_TOKEN = os.getenv("NUDE_CORE_TOKEN")
 GUILD_ID_STR = os.getenv("GUILD_ID")
 GUILD_ID = int(GUILD_ID_STR)
+guild_obj = discord.Object(id=GUILD_ID)
 CHANNEL_ID_NOTIF = os.getenv("CHANNEL_ID_NOTIF")
-ADMIN_ROLE_ID = os.getenv("ADMIN_ROLE_ID")
+
 DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "fr")
-ephemeral_env = os.getenv("EPHEMERAL_GLOBAL", "true").lower()
-EPHEMERAL_GLOBAL = ephemeral_env == "true"
+EPHEMERAL_ENV = os.getenv("EPHEMERAL_ENV", "true").lower()
+EPHEMERAL_GLOBAL = EPHEMERAL_ENV == "true"
 VERSION = os.getenv("VERSION")
 
 if not NUDE_CORE_TOKEN:
     logger.error("❌ NUDE_CORE_TOKEN manquant dans les fichiers .env")
     raise ValueError("❌ NUDE_CORE_TOKEN manquant dans les fichiers .env")
-elif not GUILD_ID:
-    logger.error("❌ GUILD_ID manquant dans les fichiers .env")
-    raise ValueError("❌ GUILD_ID manquant dans les fichiers .env")
+elif not GUILD_ID_STR:
+    logger.error("❌ GUILD_ID_STR manquant dans les fichiers .env")
+    raise ValueError("❌ GUILD_ID_STR manquant dans les fichiers .env")
+    if not GUILD_ID:
+        logger.error("❌ Échec de la convertion de GUILD_ID en 'int'")
+        raise ValueError("❌ Échec de la convertion de GUILD_ID en 'int'")
+        if guild_obj is None:
+            logger.error("❌ GUILD_ID invalide, impossible de créer l'objet guild")
+            raise ValueError("❌ GUILD_ID invalide, impossible de créer l'objet guild")
 elif not CHANNEL_ID_NOTIF:
     logger.error("❌ CHANNEL_ID_NOTIF manquant dans les fichiers .env")
     raise ValueError("❌ CHANNEL_ID_NOTIF manquant dans les fichiers .env")
-elif not ADMIN_ROLE_ID:
-    logger.error("❌ ADMIN_ROLE_ID manquant dans les fichiers .env")
-    raise ValueError("❌ ADMIN_ROLE_ID manquant dans les fichiers .env")
+
 elif not DEFAULT_LANGUAGE:
     logger.error("❌ DEFAULT_LANGUAGE manquant dans les fichiers .env")
     raise ValueError("❌ DEFAULT_LANGUAGE manquant dans les fichiers .env")
-elif ephemeral_env not in ["true", "false"]:
-    logger.error("❌ EPHEMERAL_GLOBAL doit être 'true' ou 'false'") 
-    raise ValueError("❌ EPHEMERAL_GLOBAL doit être 'true' ou 'false'")
+elif EPHEMERAL_ENV not in ["true", "false"]:
+    logger.error("❌ EPHEMERAL_ENV doit être 'true' ou 'false'") 
+    raise ValueError("❌ EPHEMERAL_ENV doit être 'true' ou 'false'")
 
 logger.info(f"✅ Configuration chargée: GUILD_ID={GUILD_ID}, CHANNEL_ID_NOTIF={CHANNEL_ID_NOTIF}, ADMIN_ROLE_ID={ADMIN_ROLE_ID}, DEFAULT_LANGUAGE={DEFAULT_LANGUAGE}, EPHEMERAL_GLOBAL={EPHEMERAL_GLOBAL}")
 """# CONFIGURATION ET INITIALISATION
@@ -157,6 +155,10 @@ class LanguageManager:
         return self.translations.get(lang_code, {}).get("language_name", lang_code)
 
 lang_manager = LanguageManager()
+
+def t(key: str, interaction: discord.Interaction = None, **kwargs) -> str:
+    user_id = interaction.user.id if interaction else None
+    return lang_manager.get(key, user_id, **kwargs)
 """# GESTION DES LANGUES
 """========================
 # INITIALISATION DU BOT
@@ -180,38 +182,7 @@ custom_commands = {}
 command_cooldowns = defaultdict(lambda: 0)
 COMMAND_COOLDOWN = 3
 """# INITIALISATION DU BOT
-"""========================
-# UTILITAIRES
-# =========================
-def t(key: str, interaction: discord.Interaction = None, **kwargs) -> str:
-    user_id = interaction.user.id if interaction else None
-    return lang_manager.get(key, user_id, **kwargs)
 
-def is_admin(interaction: discord.Interaction) -> bool:
-    if not ADMIN_ROLE_ID:
-        logger.warning("⚠️ ADMIN_ROLE_ID non défini")
-        return False
-    try:
-        admin_role_id = int(ADMIN_ROLE_ID)
-        if interaction.user.guild_permissions.administrator:
-            return True
-        return any(role.id == admin_role_id for role in interaction.user.roles)
-    except ValueError:
-        logger.error(f"❌ ADMIN_ROLE_ID invalide : {ADMIN_ROLE_ID}")
-        return False
-
-async def check_command_cooldown(user_id: int, channel) -> bool:
-    now = time.time()
-    if now < command_cooldowns[user_id]:
-        remaining = int(command_cooldowns[user_id] - now)  # Convertir en int
-        await channel.send(f"⏱️ Cooldown actif ({remaining}s restant)", delete_after=3)
-        return False
-    command_cooldowns[user_id] = now + COMMAND_COOLDOWN
-    return True
-
-def get_ephemeral(interaction: discord.Interaction, default: bool = True) -> bool:
-    return EPHEMERAL_GLOBAL if interaction else default
-"""# UTILITAIRES
 """========================
 # COMMANDES CSV
 # =========================
@@ -271,6 +242,7 @@ def save_warns(warns):
 
 warns_data = load_warns()
 """# MODÉRATION
+
 """========================
 # ÉVÉNEMENTS
 # =========================
@@ -376,19 +348,19 @@ async def help_command(interaction: discord.Interaction):
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
     embed = discord.Embed(title=t("help_title", interaction), color=discord.Color.blue())
     embed.add_field(name=t("help_system", interaction),
-                    value=f"🟢 `/ping`\n🟡 `/reboot`\n🟡 `/upgrade`\n🟡 `/bot.update`",
+                    value=f"`/ping`\n `/reboot`\n `/upgrade`\n `/bot.update`",
                     inline=False)
     embed.add_field(name=t("help_csv", interaction),
-                    value=f"🟢 `/create`\n🟢 `/modif`\n🟢 `/delete`\n🟢 `/list`\n🟢 `/reload_commands`",
+                    value=f"`/create`\n`/modif`\n`/delete`\n`/list`\n`/reload_commands`",
                     inline=False)
-    embed.add_field(name="⚠️ Modération",
-                    value=f"🟠 `/warn`\n🟠 `/warns`\n🟠 `/unwarn`",
+    embed.add_field(name="⚠Modération",
+                    value=f"`/warn`\n`/warns`\n`/unwarn`",
                     inline=False)
-    embed.add_field(name="📜 Logs",
-                    value=f"🔵 `/logs`\n🔵 `/systemlog`",
+    embed.add_field(name="Logs",
+                    value=f"`/logs`\n`/systemlog`",
                     inline=False)
     embed.add_field(name=t("help_lang", interaction),
-                    value=f"🟢 `/language`", inline=False)
+                    value=f"`/language`", inline=False)
     embed.set_footer(text=t("help_footer", interaction))
     await interaction.response.send_message(embed=embed, ephemeral=EPHEMERAL_GLOBAL
 )
@@ -584,14 +556,7 @@ async def warn_command(interaction: discord.Interaction, user: discord.Member, r
     cmd_user = interaction.user
     cmd_name = interaction.command.name
     logger.info(f"L'utilisateur {cmd_user} a exécuté la commande {cmd_name}")
-
-    if not is_admin(interaction):
-        await interaction.response.send_message(
-            t("permission_denied", interaction),
-            ephemeral=EPHEMERAL_GLOBAL
-        )
-        return
-
+    
     uid = user.id
     warns_data.setdefault(uid, {"count": 0, "reasons": []})
     warns_data[uid]["count"] += 1
@@ -636,10 +601,7 @@ async def unwarn_command(interaction: discord.Interaction, user: discord.Member,
     user = interaction.user
     name = interaction.command.name
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
-    if not is_admin(interaction):
-        await interaction.response.send_message("permission_denied", ephemeral=EPHEMERAL_GLOBAL
-)
-        return
+
     uid = user.id
     data = warns_data.get(uid)
     if not data or data["count"] == 0:
@@ -710,13 +672,6 @@ async def reboot_command(interaction: discord.Interaction):
     cmd_name = interaction.command.name
     logger.info(f"L'utilisateur {cmd_user} a exécuté la commande {cmd_name}")
 
-    if not is_admin(interaction):
-        await interaction.response.send_message(
-            t("permission_denied", interaction),
-            ephemeral=EPHEMERAL_GLOBAL
-        )
-        return  # Ce return est correct ici
-
     # Code exécuté seulement si admin
     await interaction.response.send_message(
         "🔄 Redémarrage du bot...",
@@ -732,13 +687,6 @@ async def upgrade_command(interaction: discord.Interaction):
     cmd_user = interaction.user
     cmd_name = interaction.command.name
     logger.info(f"L'utilisateur {cmd_user} a exécuté la commande {cmd_name}")
-
-    if not is_admin(interaction):
-        await interaction.response.send_message(
-            t("permission_denied", interaction),
-            ephemeral=EPHEMERAL_GLOBAL
-        )
-        return  # Ce return est correct ici
 
     # Code exécuté seulement si admin
     await interaction.response.send_message(
@@ -767,10 +715,6 @@ async def ephemeral_command(interaction: discord.Interaction, option: bool):
     name = interaction.command.name
     logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
     global EPHEMERAL_GLOBAL
-    if not is_admin(interaction):
-        await interaction.response.send_message("permission_denied", ephemeral=True
-)
-        return
 
     EPHEMERAL_GLOBAL = option
     status = "activés" if EPHEMERAL_GLOBAL else "désactivés"
