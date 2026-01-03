@@ -1,0 +1,13 @@
+# Fichiers d'environnement
+token.env
+
+color_logs.txt
+# Logs
+logs/
+
+# Cache Python
+__pycache__/
+*.pyc
+
+.DS_Store
+

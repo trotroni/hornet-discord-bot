@@ -34,6 +34,67 @@ INTENTS.message_content = True
 INTENTS.members = True
 bot = commands.Bot(command_prefix="!", intents=INTENTS)
 
+class LanguageManager:
+    """Gestionnaire de traductions multilingues"""
+    def __init__(self):
+        self.translations = {}
+        self.available_languages = []
+        self.user_preferences = {}
+
+    def load_languages(self):
+        self.translations.clear()
+        self.available_languages.clear()
+        files = list(LANG_DIR.glob("*.json"))
+        print("LANG_DIR =", LANG_DIR)
+        print("Existe :", LANG_DIR.exists())
+        print("Fichiers :", list(LANG_DIR.glob("*.json")))
+        if not files:
+            logger.error(f"❌ Aucun fichier de langue dans {LANG_DIR}")
+            raise FileNotFoundError("Aucun fichier de traduction")
+        for file in files:
+            lang_code = file.stem
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    self.translations[lang_code] = json.load(f)
+                    self.available_languages.append(lang_code)
+                logger.info(f"✅ Langue chargée : {lang_code}")
+            except Exception as e:
+                logger.error(f"❌ Erreur chargement {file}: {e}")
+        if not self.available_languages:
+            raise ValueError("Aucune langue valide chargée")
+
+    def get(self, key: str, user_id: int = None, **kwargs) -> str:
+        lang = self.user_preferences.get(user_id, DEFAULT_LANGUAGE)
+        if lang not in self.translations:
+            lang = DEFAULT_LANGUAGE
+
+        data = self.translations.get(lang, {})
+        for part in key.split("."):
+            if not isinstance(data, dict):
+                return f"[{key}]"
+            data = data.get(part)
+
+        if data is None:
+            return f"[{key}]"
+
+        try:
+            return data.format(**kwargs)
+        except KeyError as e:
+            logger.warning(f"⚠️ Variable manquante pour '{key}': {e}")
+            return data
+
+    def set_user_language(self, user_id: int, language: str) -> bool:
+        if language in self.available_languages:
+            self.user_preferences[user_id] = language
+            return True
+        return False
+
+    def get_language_name(self, lang_code: str) -> str:
+        return self.translations.get(lang_code, {}).get("language_name", lang_code)
+
+lang_manager = LanguageManager()
+
+
 # ON_READY
 @bot.event
 async def on_ready():
@@ -43,6 +104,29 @@ async def on_ready():
         return
     await bot.tree.sync(guild=guild)
     print(f"Bot connecté : {bot.user} - commandes synchronisées sur la guild {guild.name}")
+
+    if CHANNEL_ID_NOTIF:
+        channel = bot.get_channel(int(CHANNEL_ID_NOTIF))
+        if channel:
+            embed = discord.Embed(
+                title=lang_manager.get("bot.online_title"),
+                description=lang_manager.get("bot.online_description"),
+                color=discord.Color.pink()
+            )
+
+            embed.add_field(name="Date", value=datetime.now().strftime("%Y-%m-%d"), inline=True)
+            embed.add_field(name="Heure", value=datetime.now().strftime("%H:%M:%S"), inline=True)
+            embed.add_field(name="Version", value=VERSION, inline=True)
+
+            embed.set_footer(
+                text=lang_manager.get(
+                    "bot.online_footer",
+                    end=time.perf_counter() - start
+                )
+            )
+
+            await channel.send(embed=embed)
+            logger.info(f"✅ Message de démarrage envoyé")
 
 # /p2p_ticket
 @bot.tree.command(name="p2p_ticket", description="Créer un ticket p2p", guild=guild_obj)

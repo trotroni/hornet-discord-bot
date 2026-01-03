@@ -6,9 +6,9 @@ Nécessite: discord.py 2.x, python-dotenv
 Installation: pip install discord.py python-dotenv
 """
 
-# ========================================
+
 # IMPORTS
-# ========================================
+
 import os
 import sys
 import csv
@@ -43,9 +43,9 @@ WARN_FILE.touch(exist_ok=True)
 #lancement chrono 
 start = time.perf_counter()
 
-# ========================================
+
 # LOGGING
-# ========================================
+
 log_filename = LOGS_DIR / f"bot.{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
 logging.basicConfig(
     level=logging.INFO,
@@ -57,9 +57,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("DiscordBot")
 
-# ========================================
+
 # CONFIGURATION ET INITIALISATION
-# ========================================
+
 
 load_dotenv(dotenv_path="../var.env")
 
@@ -94,9 +94,9 @@ elif ephemeral_env not in ["true", "false"]:
 
 logger.info(f"✅ Configuration chargée: GUILD_ID={GUILD_ID}, CHANNEL_ID_NOTIF={CHANNEL_ID_NOTIF}, ADMIN_ROLE_ID={ADMIN_ROLE_ID}, DEFAULT_LANGUAGE={DEFAULT_LANGUAGE}, EPHEMERAL_GLOBAL={EPHEMERAL_GLOBAL}")
 
-# ========================================
+
 # GESTION DES LANGUES
-# ========================================
+
 class LanguageManager:
     """Gestionnaire de traductions multilingues"""
     def __init__(self):
@@ -157,9 +157,7 @@ class LanguageManager:
 
 lang_manager = LanguageManager()
 
-# ========================================
 # INITIALISATION DU BOT
-# ========================================
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
@@ -179,9 +177,7 @@ custom_commands = {}
 command_cooldowns = defaultdict(lambda: 0)
 COMMAND_COOLDOWN = 3
 
-# ========================================
 # UTILITAIRES
-# ========================================
 def t(key: str, interaction: discord.Interaction = None, **kwargs) -> str:
     user_id = interaction.user.id if interaction else None
     return lang_manager.get(key, user_id, **kwargs)
@@ -212,9 +208,9 @@ def get_ephemeral(interaction: discord.Interaction, default: bool = True) -> boo
     """Renvoie True si le message doit être éphémère."""
     return EPHEMERAL_GLOBAL if interaction else default
 
-# ========================================
+
 # COMMANDES CSV
-# ========================================
+
 def load_custom_commands():
     global custom_commands
     custom_commands.clear()
@@ -242,9 +238,9 @@ def save_custom_commands():
         logger.error(f"❌ Erreur sauvegarde CSV : {e}")
         return False
 
-# ========================================
+
 # MODÉRATION
-# ========================================
+
 WARN_LIMIT = 2
 KICK_DURATION = 30
 
@@ -271,9 +267,9 @@ def save_warns(warns):
 
 warns_data = load_warns()
 
-# ========================================
+
 # ÉVÉNEMENTS
-# ========================================
+
 
 @bot.event
 async def on_ready():
@@ -344,27 +340,17 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-# ========================================
+
 # COMMANDES SLASH
-# ========================================
-start = time.perf_counter()
 
 # --------- Ping / Info / Help ---------
 @bot.tree.command(name="ping", description="Teste la réactivité du bot")
 async def ping(interaction: discord.Interaction):
-    time =
     embed = discord.Embed(
         title=t(f"info.ping.response"),
         description=t("bot.online_description"),
         color=discord.Color.pink()
     )
-    embed.set_footer(
-        text=t(
-            "info.ping.footer",
-            end=time.perf_counter() - start
-        )
-    )
-
     await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="info", description="Info sur le bot")
@@ -807,8 +793,8 @@ async def test_command(interaction: discord.Interaction):
     await interaction.response.send_message("✅ Test réussi!", ephemeral=EPHEMERAL_GLOBAL
 )
 
-# ========================================
+
 # LANCEMENT DU BOT
-# ========================================
+
 if __name__ == "__main__":
     bot.run(NUDE_CORE_TOKEN)
