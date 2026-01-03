@@ -736,3 +736,19 @@ async def test_command(interaction: discord.Interaction):
 if __name__ == "__main__":
     bot.run(NUDE_CORE_TOKEN)
 """# LANCEMENT DU BOT
+
+from logging_setup import setup_logger
+from configuration import TOKEN
+from gestion_langues import lang_manager
+from initialisation_bot import MyBot
+
+logger = setup_logger()
+
+bot = MyBot(command_prefix="/")
+
+@bot.event
+async def on_ready():
+    lang_manager.load_languages()
+    logger.info("Bot prêt")
+
+bot.run(TOKEN)
