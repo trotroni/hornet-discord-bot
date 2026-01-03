@@ -1,79 +1,56 @@
 from imports import *
+from dotenv import load_dotenv
 
-def reload_nude_core_config():
-    load_dotenv(dotenv_path="../var.env")
+# -------------------------------
+# Variables globales pour tous les bots
+# -------------------------------
+BASE_DIR = Path(__file__).parent.parent
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
 
-    NUDE_COMPTA_TOKEN = os.getenv("NUDE_COMPTA_TOKEN")
-    GUILD_ID_STR = os.getenv("GUILD_ID")
-    GUILD_ID = int(GUILD_ID_STR)
-    guild_obj = discord.Object(id=GUILD_ID)
-    CHANNEL_ID_NOTIF = os.getenv("CHANNEL_ID_NOTIF")
+LANG_DIR = BASE_DIR / "languages"
+LANG_DIR.mkdir(exist_ok=True)
 
-    DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "fr")
-    EPHEMERAL_ENV = os.getenv("EPHEMERAL_ENV", "true").lower()
-    EPHEMERAL_GLOBAL = EPHEMERAL_ENV == "true"
-    VERSION = os.getenv("VERSION")
+COMMANDS_CSV = BASE_DIR / "commands.csv"
+COMMANDS_CSV.touch(exist_ok=True)
 
-    if not NUDE_COMPTA_TOKEN:
-        logger.error("❌ NUDE_COMPTA_TOKEN manquant dans les fichiers .env")
-        raise ValueError("❌ NUDE_COMPTA_TOKEN manquant dans les fichiers .env")
-    elif not GUILD_ID_STR:
-        logger.error("❌ GUILD_ID_STR manquant dans les fichiers .env")
-        raise ValueError("❌ GUILD_ID_STR manquant dans les fichiers .env")
-        if not GUILD_ID:
-            logger.error("❌ Échec de la convertion de GUILD_ID en 'int'")
-            raise ValueError("❌ Échec de la convertion de GUILD_ID en 'int'")
-            if guild_obj is None:
-                logger.error("❌ GUILD_ID invalide, impossible de créer l'objet guild")
-                raise ValueError("❌ GUILD_ID invalide, impossible de créer l'objet guild")
-    elif not CHANNEL_ID_NOTIF:
-        logger.error("❌ CHANNEL_ID_NOTIF manquant dans les fichiers .env")
-        raise ValueError("❌ CHANNEL_ID_NOTIF manquant dans les fichiers .env")
+WARN_FILE = BASE_DIR / "warns.csv"
+WARN_FILE.touch(exist_ok=True)
 
-    elif not DEFAULT_LANGUAGE:
-        logger.error("❌ DEFAULT_LANGUAGE manquant dans les fichiers .env")
-        raise ValueError("❌ DEFAULT_LANGUAGE manquant dans les fichiers .env")
-    elif EPHEMERAL_ENV not in ["true", "false"]:
-        logger.error("❌ EPHEMERAL_ENV doit être 'true' ou 'false'")
-        raise ValueError("❌ EPHEMERAL_ENV doit être 'true' ou 'false'")
+# -------------------------------
+# Fonction pour charger la config
+# -------------------------------
+def load_bot_config(bot_type: str = "core"):
+    """
+    bot_type: "core" ou "compta"
+    Retourne un dict avec toutes les variables nécessaires
+    """
+    load_dotenv(dotenv_path=BASE_DIR.parent / "var.env")
 
-    logger.info(f"✅ Configuration chargée: GUILD_ID={GUILD_ID}, CHANNEL_ID_NOTIF={CHANNEL_ID_NOTIF}, ADMIN_ROLE_ID={ADMIN_ROLE_ID}, DEFAULT_LANGUAGE={DEFAULT_LANGUAGE}, EPHEMERAL_GLOBAL={EPHEMERAL_GLOBAL}")
+    config = {}
 
-def reload_nude_compta_config():
-    load_dotenv(dotenv_path="../var.env")
+    if bot_type == "core":
+        config["TOKEN"] = os.getenv("NUDE_CORE_TOKEN")
+    elif bot_type == "compta":
+        config["TOKEN"] = os.getenv("NUDE_COMPTA_TOKEN")
+    else:
+        raise ValueError("bot_type doit être 'core' ou 'compta'")
 
-    NUDE_CORE_TOKEN = os.getenv("NUDE_CORE_TOKEN")
-    GUILD_ID_STR = os.getenv("GUILD_ID")
-    GUILD_ID = int(GUILD_ID_STR)
-    guild_obj = discord.Object(id=GUILD_ID)
-    CHANNEL_ID_NOTIF = os.getenv("CHANNEL_ID_NOTIF")
+    config["GUILD_ID_STR"] = os.getenv("GUILD_ID")
+    config["GUILD_ID"] = int(config["GUILD_ID_STR"]) if config["GUILD_ID_STR"] else None
+    config["CHANNEL_ID_NOTIF"] = os.getenv("CHANNEL_ID_NOTIF")
+    config["DEFAULT_LANGUAGE"] = os.getenv("DEFAULT_LANGUAGE", "fr")
+    config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
+    config["VERSION"] = os.getenv("VERSION")
+    config["ADMIN_ROLE_ID"] = os.getenv("ADMIN_ROLE_ID")  # à ajouter dans ton .env si nécessaire
+    config["BOT_NAME"] = f"nude-{bot_type}-bot"
 
-    DEFAULT_LANGUAGE = os.getenv("DEFAULT_LANGUAGE", "fr")
-    EPHEMERAL_ENV = os.getenv("EPHEMERAL_ENV", "true").lower()
-    EPHEMERAL_GLOBAL = EPHEMERAL_ENV == "true"
-    VERSION = os.getenv("VERSION")
+    # Vérifications
+    if not config["TOKEN"]:
+        raise ValueError(f"❌ Token manquant pour {bot_type}")
+    if not config["GUILD_ID"]:
+        raise ValueError("❌ GUILD_ID manquant ou invalide")
+    if not config["CHANNEL_ID_NOTIF"]:
+        raise ValueError("❌ CHANNEL_ID_NOTIF manquant")
 
-    if not NUDE_CORE_TOKEN:
-        logger.error("❌ NUDE_CORE_TOKEN manquant dans les fichiers .env")
-        raise ValueError("❌ NUDE_CORE_TOKEN manquant dans les fichiers .env")
-    elif not GUILD_ID_STR:
-        logger.error("❌ GUILD_ID_STR manquant dans les fichiers .env")
-        raise ValueError("❌ GUILD_ID_STR manquant dans les fichiers .env")
-        if not GUILD_ID:
-            logger.error("❌ Échec de la convertion de GUILD_ID en 'int'")
-            raise ValueError("❌ Échec de la convertion de GUILD_ID en 'int'")
-            if guild_obj is None:
-                logger.error("❌ GUILD_ID invalide, impossible de créer l'objet guild")
-                raise ValueError("❌ GUILD_ID invalide, impossible de créer l'objet guild")
-    elif not CHANNEL_ID_NOTIF:
-        logger.error("❌ CHANNEL_ID_NOTIF manquant dans les fichiers .env")
-        raise ValueError("❌ CHANNEL_ID_NOTIF manquant dans les fichiers .env")
-
-    elif not DEFAULT_LANGUAGE:
-        logger.error("❌ DEFAULT_LANGUAGE manquant dans les fichiers .env")
-        raise ValueError("❌ DEFAULT_LANGUAGE manquant dans les fichiers .env")
-    elif EPHEMERAL_ENV not in ["true", "false"]:
-        logger.error("❌ EPHEMERAL_ENV doit être 'true' ou 'false'")
-        raise ValueError("❌ EPHEMERAL_ENV doit être 'true' ou 'false'")
-
-    logger.info(f"✅ Configuration chargée: GUILD_ID={GUILD_ID}, CHANNEL_ID_NOTIF={CHANNEL_ID_NOTIF}, ADMIN_ROLE_ID={ADMIN_ROLE_ID}, DEFAULT_LANGUAGE={DEFAULT_LANGUAGE}, EPHEMERAL_GLOBAL={EPHEMERAL_GLOBAL}")
+    return config

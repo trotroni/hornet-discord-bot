@@ -1,6 +1,8 @@
 from imports import *
-from configuration import DEFAULT_LANGUAGE
-import logging
+from configuration import DEFAULT_LANGUAGE, LANG_DIR
+from logging import getLogger
+
+logger = getLogger("lang_manager")
 
 class LanguageManager:
     def __init__(self):
@@ -12,12 +14,10 @@ class LanguageManager:
         self.translations.clear()
         self.available_languages.clear()
         files = list(LANG_DIR.glob("*.json"))
-        print("LANG_DIR =", LANG_DIR)
-        print("Existe :", LANG_DIR.exists())
-        print("Fichiers :", list(LANG_DIR.glob("*.json")))
         if not files:
             logger.error(f"❌ Aucun fichier de langue dans {LANG_DIR}")
             raise FileNotFoundError("Aucun fichier de traduction")
+
         for file in files:
             lang_code = file.stem
             try:
@@ -40,10 +40,8 @@ class LanguageManager:
             if not isinstance(data, dict):
                 return f"[{key}]"
             data = data.get(part)
-
         if data is None:
             return f"[{key}]"
-
         try:
             return data.format(**kwargs)
         except KeyError as e:
