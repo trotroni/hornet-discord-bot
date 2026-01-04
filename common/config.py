@@ -1,28 +1,33 @@
-from .imports import *
+from common.imports import *
 from dotenv import load_dotenv
 
 # -------------------------------
 # Variables globales pour tous les bots
 # -------------------------------
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).parent.parent
+print(f"📁 Dossier de base : {BASE_DIR}")
 LOGS_DIR = BASE_DIR / "logs"
+print(f"📁 Dossier des logs : {LOGS_DIR}")
 LOGS_DIR.mkdir(exist_ok=True)
 
 LANG_DIR = BASE_DIR / "languages"
+print(f"📁 Dossier des langues : {LANG_DIR}")
 LANG_DIR.mkdir(exist_ok=True)
 
 COMMANDS_CSV = BASE_DIR / "commands.csv"
+print(f"📁 Fichier des commandes : {COMMANDS_CSV}")
 COMMANDS_CSV.touch(exist_ok=True)
 
 WARN_FILE = BASE_DIR / "warns.csv"
+print(f"📁 Fichier des warns : {WARN_FILE}")
 WARN_FILE.touch(exist_ok=True)
 
 # -------------------------------
 # Fonction pour charger la config
 # -------------------------------
-def load_bot_config(bot_type: str = "core"):
+def load_bot_config(bot_type: str = ""):
 
-    load_dotenv(dotenv_path=BASE_DIR.parent / "var.env")
+    load_dotenv(dotenv_path=BASE_DIR / "var.env")
 
     config = {}
 
