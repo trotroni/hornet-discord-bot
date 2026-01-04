@@ -1,3 +1,6 @@
+"""========================
+# IMPORTS
+# =========================
 import discord
 import os
 
@@ -11,31 +14,46 @@ from utils import generate_ticket_id, cents_to_euros, euros_to_cents, embed_colo
 from storage import load_json
 
 version = "v.0.0.0-test - 2025-12-23 - 16:30"
+"""# IMPORTS
+"""========================
+# Chemins des fichiers
+# =========================
+BASE_DIR = Path(__file__).parent
+COMMANDS_CSV = BASE_DIR / "commands.csv"
+LOGS_DIR = BASE_DIR / "logs"
+LANG_DIR = BASE_DIR.parent / "languages"
+WARN_FILE = BASE_DIR / "warns.csv"
 
-# CHARGEMENT ENV
-load_dotenv(dotenv_path="../var.env")
-NUDE_COMPTA_TOKEN = os.getenv("NUDE_COMPTA_TOKEN")
-GUILD_ID_STR = os.getenv("GUILD_ID")
-LOG_CHANNEL_ID_STR = os.getenv("LOG_CHANNEL_ID")
+# Créer les dossiers/fichiers si nécessaires
+LOGS_DIR.mkdir(exist_ok=True)
+LANG_DIR.mkdir(exist_ok=True)
+COMMANDS_CSV.touch(exist_ok=True)
+WARN_FILE.touch(exist_ok=True)
+"""# Chemins des fichiers
+"""========================
+# lancement chrono
+# =========================
+start = time.perf_counter()
+"""# lancement chrono
+"""========================
+# LOGGING
+# =========================
+log_filename = LOGS_DIR / f"bot.{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_filename, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("nude-compta-bot")
+"""# LOGGING
 
-if not NUDE_COMPTA_TOKEN:
-    raise ValueError("La variable NUDE_COMPTA_TOKEN n'est pas définie dans var.env")
-if not GUILD_ID_STR:
-    raise ValueError("La variable GUILD_ID n'est pas définie dans var.env")
-
-GUILD_ID = int(GUILD_ID_STR)
-guild_obj = discord.Object(id=GUILD_ID)
-
-LOG_CHANNEL_ID = int(LOG_CHANNEL_ID_STR) if LOG_CHANNEL_ID_STR else None
-
-# CONFIG BOT
-INTENTS = discord.Intents.default()
-INTENTS.message_content = True
-INTENTS.members = True
-bot = commands.Bot(command_prefix="!", intents=INTENTS)
-
+"""========================
+# GESTION DES LANGUES
+# =========================
 class LanguageManager:
-    """Gestionnaire de traductions multilingues"""
     def __init__(self):
         self.translations = {}
         self.available_languages = []
@@ -93,8 +111,16 @@ class LanguageManager:
         return self.translations.get(lang_code, {}).get("language_name", lang_code)
 
 lang_manager = LanguageManager()
+"""# GESTION DES LANGUES
+"""========================
+# CONFIG BOT
+INTENTS = discord.Intents.default()
+INTENTS.message_content = True
+INTENTS.members = True
+bot = commands.Bot(command_prefix="!", intents=INTENTS)
+"""# INITIALISATION DU BOT
 
-
+"""========================
 # ON_READY
 @bot.event
 async def on_ready():
@@ -127,20 +153,14 @@ async def on_ready():
 
             await channel.send(embed=embed)
             logger.info(f"✅ Message de démarrage envoyé")
-
+"""# ÉVÉNEMENTS
+"""========================
+# COMMANDES SLASH
+# =========================
 # /p2p_ticket
 @bot.tree.command(name="p2p_ticket", description="Créer un ticket p2p", guild=guild_obj)
-@app_commands.describe(
-    debiteur="Utilisateur qui doit",
-    crediteur="Utilisateur qui reçoit",
-    montant="Montant en euros",
-    motif="Motif de la dette"
-)
-async def p2p_ticket(interaction: discord.Interaction,
-                     debiteur: discord.Member,
-                     crediteur: discord.Member,
-                     montant: float,
-                     motif: str):
+@app_commands.describe(debiteur="Utilisateur qui doit", crediteur="Utilisateur qui reçoit", montant="Montant en euros", motif="Motif de la dette")
+async def p2p_ticket(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float, motif: str):
     await interaction.response.defer()
     if debiteur.id == crediteur.id:
         await interaction.response.followup.send("Un utilisateur ne peut pas se devoir à lui-même.", ephemeral=False)
@@ -169,26 +189,11 @@ async def p2p_ticket(interaction: discord.Interaction,
     await interaction.response.followup.send(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /split_ticket
-@bot.tree.command(
-    name="split_ticket", 
-    description="Créer un ticket avec plusieurs débiteurs", 
-    guild=guild_obj
-)
-@app_commands.describe(
-    debiteurs="Liste des utilisateurs TOTALES, le premier aura la part du cents en plus",
-    crediteur="Utilisateur qui reçoit",
-    montant="Montant total",
-    motif="Motif de la dette"
-)
-async def split_ticket(
-    interaction: discord.Interaction,
-    debiteurs: str,
-    crediteur: discord.Member,
-    montant: float,
-    motif: str
-):
+@bot.tree.command(name="split_ticket", description="Créer un ticket avec plusieurs débiteurs", guild=guild_obj)
+@app_commands.describe(debiteurs="Liste des utilisateurs TOTALES, le premier aura la part du cents en plus", crediteur="Utilisateur qui reçoit", montant="Montant total", motif="Motif de la dette")
+async def split_ticket(interaction: discord.Interaction, debiteurs: str, crediteur: discord.Member, montant: float, motif: str):
     await interaction.response.defer()
-
+    
     mentions = debiteurs.split()
     if not mentions:
         await interaction.response.followup.send(
@@ -306,15 +311,8 @@ async def split_ticket(
     )
 
 # /rembourse
-@bot.tree.command(
-    name="rembourse", 
-    description="Rembourser un ticket", 
-    guild=guild_obj
-)
-@app_commands.describe(
-    ticket_id="ID du ticket", 
-    montant="Montant remboursé"
-)
+@bot.tree.command(name="rembourse", description="Rembourser un ticket", guild=guild_obj)
+@app_commands.describe(ticket_id="ID du ticket", montant="Montant remboursé")
 async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montant: float):
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
@@ -333,14 +331,8 @@ async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montan
     await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /solde
-@bot.tree.command(
-    name="solde", 
-    description="Voir le solde d'un utilisateur", 
-    guild=guild_obj
-)
-@app_commands.describe(
-    utilisateur="Utilisateur (optionnel)"
-)
+@bot.tree.command(name="solde", description="Voir le solde d'un utilisateur", guild=guild_obj)
+@app_commands.describe(utilisateur="Utilisateur (optionnel)")
 async def solde(interaction: discord.Interaction, utilisateur: discord.Member | None = None):
     user = utilisateur or interaction.user
     s = calcul_solde(str(user.id))
@@ -389,11 +381,7 @@ async def solde(interaction: discord.Interaction, utilisateur: discord.Member | 
     )
 
 # /debug
-@bot.tree.command(
-    name="debug",
-    description="Liste tous les membres du serveur pour debug",
-    guild=guild_obj
-)
+@bot.tree.command(name="debug",description="Liste tous les membres du serveur pour debug",guild=guild_obj)
 async def debug_members(interaction: discord.Interaction):
     if interaction.guild is None:
         await interaction.response.send_message("Cette commande doit être utilisée sur un serveur.", ephemeral=False)
@@ -425,14 +413,8 @@ async def debug_members(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
 # /close_ticket
-@bot.tree.command(
-    name="close_ticket", 
-    description="Clore un ticket et archiver", 
-    guild=guild_obj
-)
-@app_commands.describe(
-    ticket_id="ID du ticket"
-)
+@bot.tree.command(name="close_ticket", description="Clore un ticket et archiver", guild=guild_obj)
+@app_commands.describe(ticket_id="ID du ticket")
 async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
     try:
         close_ticket(ticket_id, str(interaction.user.id))
@@ -446,17 +428,8 @@ async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
     await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /set
-@bot.tree.command(
-    name="set", 
-    description="Définir une dette", 
-    guild=guild_obj
-)
-@app_commands.describe(
-    debiteur="Utilisateur qui doit",
-    crediteur="Utilisateur qui reçoit",
-    montant="Montant",
-    motif="Motif"
-)
+@bot.tree.command(name="set", description="Définir une dette", guild=guild_obj)
+@app_commands.describe(debiteur="Utilisateur qui doit", crediteur="Utilisateur qui reçoit", montant="Montant", motif="Motif")
 async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float, motif: str):
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
@@ -477,14 +450,8 @@ async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, cr
     await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /historique
-@bot.tree.command(
-    name="historique", 
-    description="Liste complète des tickets d'un utilisateur", 
-    guild=guild_obj
-)
-@app_commands.describe(
-    utilisateur="Utilisateur concerné"
-)
+@bot.tree.command(name="historique", description="Liste complète des tickets d'un utilisateur", guild=guild_obj)
+@app_commands.describe(utilisateur="Utilisateur concerné")
 async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
     tickets = load_json("tickets.json")
     embed = discord.Embed(
@@ -512,11 +479,7 @@ async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
     await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /earliest
-@bot.tree.command(
-    name="earliest",
-    description="Liste le plus ancien ticket actif",
-    guild=guild_obj
-)
+@bot.tree.command(name="earliest", description="Liste le plus ancien ticket actif", guild=guild_obj)
 async def earliest_tickets(interaction: Interaction):
     await interaction.response.defer()
     tickets = load_json("tickets.json")
@@ -549,6 +512,10 @@ async def earliest_tickets(interaction: Interaction):
       # view.add_item(Button(label="Fermer", style=discord.ButtonStyle.danger, custom_id=f"close_{tid}"))
 
     await interaction.followup.send(embed=embed, allowed_mentions=AllowedMentions(users=True))
-
+"""# COMMANDES SLASH
+"""========================
 # LANCEMENT BOT
+# =========================
 bot.run(NUDE_COMPTA_TOKEN)
+"""# LANCEMENT BOT
+
