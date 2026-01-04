@@ -1,6 +1,5 @@
-from imports import *
-from configuration import DEFAULT_LANGUAGE, LANG_DIR
-from logging import getLogger
+from .imports import *
+from common.logging import getLogger
 
 logger = getLogger("lang_manager")
 
@@ -9,8 +8,16 @@ class LanguageManager:
         self.translations = {}
         self.available_languages = []
         self.user_preferences = {}
+        self.default_language = "fr"
+        self.lang_dir = None
+
+    def configure(self, config: dict):
+        self.default_language = config.get("DEFAULT_LANGUAGE", "fr")
+        self.lang_dir = Path(config.get("LANG_DIR", "languages"))
 
     def load_languages(self):
+        if not self.lang_dir:
+            raise RuntimeError("LanguageManager non configuré")
         self.translations.clear()
         self.available_languages.clear()
         files = list(LANG_DIR.glob("*.json"))
@@ -31,9 +38,9 @@ class LanguageManager:
             raise ValueError("Aucune langue valide chargée")
 
     def get(self, key: str, user_id: int = None, **kwargs) -> str:
-        lang = self.user_preferences.get(user_id, DEFAULT_LANGUAGE)
+        lang = self.user_preferences.get(user_id, self.default_language)
         if lang not in self.translations:
-            lang = DEFAULT_LANGUAGE
+            lang = CONFIG["DEFAULT_LANGUAGE"]
 
         data = self.translations.get(lang, {})
         for part in key.split("."):

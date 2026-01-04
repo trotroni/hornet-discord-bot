@@ -1,10 +1,10 @@
-from imports import *
+from .imports import *
 from dotenv import load_dotenv
 
 # -------------------------------
 # Variables globales pour tous les bots
 # -------------------------------
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
@@ -21,10 +21,7 @@ WARN_FILE.touch(exist_ok=True)
 # Fonction pour charger la config
 # -------------------------------
 def load_bot_config(bot_type: str = "core"):
-    """
-    bot_type: "core" ou "compta"
-    Retourne un dict avec toutes les variables nécessaires
-    """
+
     load_dotenv(dotenv_path=BASE_DIR.parent / "var.env")
 
     config = {}
@@ -42,7 +39,7 @@ def load_bot_config(bot_type: str = "core"):
     config["DEFAULT_LANGUAGE"] = os.getenv("DEFAULT_LANGUAGE", "fr")
     config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
     config["VERSION"] = os.getenv("VERSION")
-    config["ADMIN_ROLE_ID"] = os.getenv("ADMIN_ROLE_ID")  # à ajouter dans ton .env si nécessaire
+    config["ADMIN_ROLE_ID"] = os.getenv("ADMIN_ROLE_ID")
     config["BOT_NAME"] = f"nude-{bot_type}-bot"
 
     # Vérifications

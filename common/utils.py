@@ -1,6 +1,5 @@
-from imports import *
-from configuration import EPHEMERAL_GLOBAL
-from gestion_langues import lang_manager
+from .imports import *
+from .config import EPHEMERAL_GLOBAL
 
 def get_ephemeral(interaction, default=True):
     return EPHEMERAL_GLOBAL if interaction else default
