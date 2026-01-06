@@ -1,13 +1,18 @@
+# nude-compta-bot/main.py
+from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
-from common.imports import *
+from common.loggingBot import getLogger
 
 bot, CONFIG, logger = create_bot("compta")
+
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
+
+t = lang_manager.get
 
 @bot.event
 async def on_ready():
-    logger.info(f"✅ Core bot connecté : {bot.user}")
+    logger.info(f"✅ Compta bot connecté : {bot.user}")
 
     try:
         lang_manager.load_languages()
@@ -18,6 +23,7 @@ async def on_ready():
 
     logger.info("✅ Compta bot prêt")
 
+# COMMANDES SLASH
 
 # /p2p_ticket
 @bot.tree.command(name="p2p_ticket", description="Créer un ticket p2p", guild=guild_obj)

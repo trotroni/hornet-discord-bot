@@ -1,6 +1,6 @@
+# common/config.py
 from common.imports import *
 from dotenv import load_dotenv
-
 # -------------------------------
 # Variables globales pour tous les bots
 # -------------------------------

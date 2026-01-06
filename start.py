@@ -1,10 +1,11 @@
-# nude-discord/main.py
+# start.py
 
 import subprocess
 import sys
 from pathlib import Path
 import signal
 import time
+from common.loggingBot import getLogger
 
 # Dossier racine du projet
 project_root = Path(__file__).parent

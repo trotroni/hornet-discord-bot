@@ -3,6 +3,8 @@ from common.config import load_bot_config
 import logging
 from discord.ext import commands
 
+from common.loggingBot import getLogger
+
 
 class MyBot(commands.Bot):
     def __init__(self, config: dict, **kwargs):
@@ -17,7 +19,9 @@ class MyBot(commands.Bot):
 
 def create_bot(bot_type: str):
     CONFIG = load_bot_config(bot_type)
-    logger = logging.getLogger(CONFIG["BOT_NAME"])
+    #logger = logging.getLogger(CONFIG["BOT_NAME"])
+    logger = getLogger(CONFIG["BOT_NAME"])
+    logging.basicConfig(level=logging.INFO)
 
     from .langManager import lang_manager
     lang_manager.configure(CONFIG)
