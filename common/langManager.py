@@ -1,7 +1,8 @@
 from .imports import *
-from common.logging import getLogger
+from common.config import LANG_DIR
 
-logger = getLogger("lang_manager")
+from common.loggingBot import getLogger
+logger = getLogger("langManager.py")
 
 class LanguageManager:
     def __init__(self):

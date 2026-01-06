@@ -1,43 +1,166 @@
-# nude-compta-bot/main.py
-from common.imports import *
-from common.init import create_bot
-from common.langManager import lang_manager
-from common.loggingBot import getLogger
+"""========================
+# IMPORTS
+# =========================
+import discord
+import os
 
-bot, CONFIG, logger = create_bot("compta")
+from discord import app_commands, Embed, Interaction
+from discord.ext import commands
+from discord import AllowedMentions
+from dotenv import load_dotenv
+from datetime import datetime, UTC
+from tickets import create_ticket, rembourse, calcul_solde, close_ticket
+from utils import generate_ticket_id, cents_to_euros, euros_to_cents, embed_color
+from storage import load_json
 
-guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
+version = "v.0.0.0-test - 2025-12-23 - 16:30"
+"""# IMPORTS
+"""========================
+# Chemins des fichiers
+# =========================
+BASE_DIR = Path(__file__).parent
+COMMANDS_CSV = BASE_DIR / "commands.csv"
+LOGS_DIR = BASE_DIR / "logs"
+LANG_DIR = BASE_DIR.parent / "languages"
+WARN_FILE = BASE_DIR / "warns.csv"
 
-t = lang_manager.get
+# Créer les dossiers/fichiers si nécessaires
+LOGS_DIR.mkdir(exist_ok=True)
+LANG_DIR.mkdir(exist_ok=True)
+COMMANDS_CSV.touch(exist_ok=True)
+WARN_FILE.touch(exist_ok=True)
+"""# Chemins des fichiers
+"""========================
+# lancement chrono
+# =========================
+start = time.perf_counter()
+"""# lancement chrono
+"""========================
+# LOGGING
+# =========================
+log_filename = LOGS_DIR / f"bot.{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_filename, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("nude-compta-bot")
+"""# LOGGING
 
+"""========================
+# GESTION DES LANGUES
+# =========================
+class LanguageManager:
+    def __init__(self):
+        self.translations = {}
+        self.available_languages = []
+        self.user_preferences = {}
+
+    def load_languages(self):
+        self.translations.clear()
+        self.available_languages.clear()
+        files = list(LANG_DIR.glob("*.json"))
+        print("LANG_DIR =", LANG_DIR)
+        print("Existe :", LANG_DIR.exists())
+        print("Fichiers :", list(LANG_DIR.glob("*.json")))
+        if not files:
+            logger.error(f"❌ Aucun fichier de langue dans {LANG_DIR}")
+            raise FileNotFoundError("Aucun fichier de traduction")
+        for file in files:
+            lang_code = file.stem
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    self.translations[lang_code] = json.load(f)
+                    self.available_languages.append(lang_code)
+                logger.info(f"✅ Langue chargée : {lang_code}")
+            except Exception as e:
+                logger.error(f"❌ Erreur chargement {file}: {e}")
+        if not self.available_languages:
+            raise ValueError("Aucune langue valide chargée")
+
+    def get(self, key: str, user_id: int = None, **kwargs) -> str:
+        lang = self.user_preferences.get(user_id, DEFAULT_LANGUAGE)
+        if lang not in self.translations:
+            lang = DEFAULT_LANGUAGE
+
+        data = self.translations.get(lang, {})
+        for part in key.split("."):
+            if not isinstance(data, dict):
+                return f"[{key}]"
+            data = data.get(part)
+
+        if data is None:
+            return f"[{key}]"
+
+        try:
+            return data.format(**kwargs)
+        except KeyError as e:
+            logger.warning(f"⚠️ Variable manquante pour '{key}': {e}")
+            return data
+
+    def set_user_language(self, user_id: int, language: str) -> bool:
+        if language in self.available_languages:
+            self.user_preferences[user_id] = language
+            return True
+        return False
+
+    def get_language_name(self, lang_code: str) -> str:
+        return self.translations.get(lang_code, {}).get("language_name", lang_code)
+
+lang_manager = LanguageManager()
+"""# GESTION DES LANGUES
+"""========================
+# CONFIG BOT
+INTENTS = discord.Intents.default()
+INTENTS.message_content = True
+INTENTS.members = True
+bot = commands.Bot(command_prefix="!", intents=INTENTS)
+"""# INITIALISATION DU BOT
+
+"""========================
+# ON_READY
 @bot.event
 async def on_ready():
-    logger.info(f"✅ Compta bot connecté : {bot.user}")
-
-    try:
-        lang_manager.load_languages()
-    except Exception as e:
-        logger.critical(f"❌ Langues non chargées : {e}")
-        await bot.close()
+    guild = bot.get_guild(GUILD_ID)
+    if guild is None:
+        print("Erreur : le bot n'a pas accès à la guild")
         return
+    await bot.tree.sync(guild=guild)
+    print(f"Bot connecté : {bot.user} - commandes synchronisées sur la guild {guild.name}")
 
-    logger.info("✅ Compta bot prêt")
+    if CHANNEL_ID_NOTIF:
+        channel = bot.get_channel(int(CHANNEL_ID_NOTIF))
+        if channel:
+            embed = discord.Embed(
+                title=lang_manager.get("bot.online_title"),
+                description=lang_manager.get("bot.online_description"),
+                color=discord.Color.pink()
+            )
 
+            embed.add_field(name="Date", value=datetime.now().strftime("%Y-%m-%d"), inline=True)
+            embed.add_field(name="Heure", value=datetime.now().strftime("%H:%M:%S"), inline=True)
+            embed.add_field(name="Version", value=VERSION, inline=True)
+
+            embed.set_footer(
+                text=lang_manager.get(
+                    "bot.online_footer",
+                    end=time.perf_counter() - start
+                )
+            )
+
+            await channel.send(embed=embed)
+            logger.info(f"✅ Message de démarrage envoyé")
+"""# ÉVÉNEMENTS
+"""========================
 # COMMANDES SLASH
-
+# =========================
 # /p2p_ticket
 @bot.tree.command(name="p2p_ticket", description="Créer un ticket p2p", guild=guild_obj)
-@app_commands.describe(
-    debiteur="Utilisateur qui doit",
-    crediteur="Utilisateur qui reçoit",
-    montant="Montant en euros",
-    motif="Motif de la dette"
-)
-async def p2p_ticket(interaction: discord.Interaction,
-                     debiteur: discord.Member,
-                     crediteur: discord.Member,
-                     montant: float,
-                     motif: str):
+@app_commands.describe(debiteur="Utilisateur qui doit", crediteur="Utilisateur qui reçoit", montant="Montant en euros", motif="Motif de la dette")
+async def p2p_ticket(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float, motif: str):
     await interaction.response.defer()
     if debiteur.id == crediteur.id:
         await interaction.response.followup.send("Un utilisateur ne peut pas se devoir à lui-même.", ephemeral=False)
@@ -62,31 +185,15 @@ async def p2p_ticket(interaction: discord.Interaction,
         color=embed_color("p2p")
     )
     embed.add_field(name="Motif", value=f"`{motif}`", inline=False)
-
-    await interaction.response.followup.send(embed=embed, allowed_mentions=AllowedMentions(users=True))
-
+        
+    await interaction.response.followup.send(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /split_ticket
-@bot.tree.command(
-    name="split_ticket",
-    description="Créer un ticket avec plusieurs débiteurs",
-    guild=guild_obj
-)
-@app_commands.describe(
-    debiteurs="Liste des utilisateurs TOTALES, le premier aura la part du cents en plus",
-    crediteur="Utilisateur qui reçoit",
-    montant="Montant total",
-    motif="Motif de la dette"
-)
-async def split_ticket(
-        interaction: discord.Interaction,
-        debiteurs: str,
-        crediteur: discord.Member,
-        montant: float,
-        motif: str
-):
+@bot.tree.command(name="split_ticket", description="Créer un ticket avec plusieurs débiteurs", guild=guild_obj)
+@app_commands.describe(debiteurs="Liste des utilisateurs TOTALES, le premier aura la part du cents en plus", crediteur="Utilisateur qui reçoit", montant="Montant total", motif="Motif de la dette")
+async def split_ticket(interaction: discord.Interaction, debiteurs: str, crediteur: discord.Member, montant: float, motif: str):
     await interaction.response.defer()
-
+    
     mentions = debiteurs.split()
     if not mentions:
         await interaction.response.followup.send(
@@ -177,7 +284,7 @@ async def split_ticket(
             )
 
     description = "\n".join(lignes)
-
+    
     # Embed
     embed = discord.Embed(
         title=f"Nouveau ticket groupe ({ticket_id})",
@@ -203,17 +310,9 @@ async def split_ticket(
         allowed_mentions=discord.AllowedMentions(users=True)
     )
 
-
 # /rembourse
-@bot.tree.command(
-    name="rembourse",
-    description="Rembourser un ticket",
-    guild=guild_obj
-)
-@app_commands.describe(
-    ticket_id="ID du ticket",
-    montant="Montant remboursé"
-)
+@bot.tree.command(name="rembourse", description="Rembourser un ticket", guild=guild_obj)
+@app_commands.describe(ticket_id="ID du ticket", montant="Montant remboursé")
 async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montant: float):
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
@@ -229,18 +328,11 @@ async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montan
         description=f"Montant remboursé : {montant:.2f}€",
         color=embed_color("remboursement")
     )
-    await interaction.response.send_message(embed=embed, allowed_mentions=AllowedMentions(users=True))
-
+    await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /solde
-@bot.tree.command(
-    name="solde",
-    description="Voir le solde d'un utilisateur",
-    guild=guild_obj
-)
-@app_commands.describe(
-    utilisateur="Utilisateur (optionnel)"
-)
+@bot.tree.command(name="solde", description="Voir le solde d'un utilisateur", guild=guild_obj)
+@app_commands.describe(utilisateur="Utilisateur (optionnel)")
 async def solde(interaction: discord.Interaction, utilisateur: discord.Member | None = None):
     user = utilisateur or interaction.user
     s = calcul_solde(str(user.id))
@@ -288,13 +380,8 @@ async def solde(interaction: discord.Interaction, utilisateur: discord.Member | 
         allowed_mentions=discord.AllowedMentions(users=True)
     )
 
-
 # /debug
-@bot.tree.command(
-    name="debug",
-    description="Liste tous les membres du serveur pour debug",
-    guild=guild_obj
-)
+@bot.tree.command(name="debug",description="Liste tous les membres du serveur pour debug",guild=guild_obj)
 async def debug_members(interaction: discord.Interaction):
     if interaction.guild is None:
         await interaction.response.send_message("Cette commande doit être utilisée sur un serveur.", ephemeral=False)
@@ -318,23 +405,16 @@ async def debug_members(interaction: discord.Interaction):
                 inline=False
             )
     embed.add_field(
-        name="Code Version",
-        value=f"{version}\nGit : https://github.com/Trotroni/COMPTA",
+        name="Code Version", 
+        value=f"{version}\nGit : https://github.com/Trotroni/COMPTA", 
         inline=False
     )
 
     await interaction.response.send_message(embed=embed, ephemeral=False)
 
-
 # /close_ticket
-@bot.tree.command(
-    name="close_ticket",
-    description="Clore un ticket et archiver",
-    guild=guild_obj
-)
-@app_commands.describe(
-    ticket_id="ID du ticket"
-)
+@bot.tree.command(name="close_ticket", description="Clore un ticket et archiver", guild=guild_obj)
+@app_commands.describe(ticket_id="ID du ticket")
 async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
     try:
         close_ticket(ticket_id, str(interaction.user.id))
@@ -342,34 +422,22 @@ async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
         await interaction.response.send_message(f"Erreur : {e}", ephemeral=False)
         return
     embed = discord.Embed(
-        title=f"Ticket {ticket_id} fermé",
+        title=f"Ticket {ticket_id} fermé", 
         color=embed_color("close_ticket")
     )
-    await interaction.response.send_message(embed=embed, allowed_mentions=AllowedMentions(users=True))
-
+    await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /set
-@bot.tree.command(
-    name="set",
-    description="Définir une dette",
-    guild=guild_obj
-)
-@app_commands.describe(
-    debiteur="Utilisateur qui doit",
-    crediteur="Utilisateur qui reçoit",
-    montant="Montant",
-    motif="Motif"
-)
-async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float,
-                  motif: str):
+@bot.tree.command(name="set", description="Définir une dette", guild=guild_obj)
+@app_commands.describe(debiteur="Utilisateur qui doit", crediteur="Utilisateur qui reçoit", montant="Montant", motif="Motif")
+async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float, motif: str):
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
         return
     montant_c = euros_to_cents(montant)
     ticket_id = generate_ticket_id("p2p")
     try:
-        create_ticket(ticket_id, "p2p", str(interaction.user.id), [{"user_id": str(debiteur.id), "part": montant_c}],
-                      str(crediteur.id), montant_c, motif)
+        create_ticket(ticket_id, "p2p", str(interaction.user.id), [{"user_id": str(debiteur.id), "part": montant_c}], str(crediteur.id), montant_c, motif)
     except Exception as e:
         await interaction.response.send_message(f"Erreur : {e}", ephemeral=False)
         return
@@ -379,22 +447,15 @@ async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, cr
         color=embed_color("set")
     )
     embed.add_field(name="Motif", value=motif, inline=False)
-    await interaction.response.send_message(embed=embed, allowed_mentions=AllowedMentions(users=True))
-
+    await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /historique
-@bot.tree.command(
-    name="historique",
-    description="Liste complète des tickets d'un utilisateur",
-    guild=guild_obj
-)
-@app_commands.describe(
-    utilisateur="Utilisateur concerné"
-)
+@bot.tree.command(name="historique", description="Liste complète des tickets d'un utilisateur", guild=guild_obj)
+@app_commands.describe(utilisateur="Utilisateur concerné")
 async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
     tickets = load_json("tickets.json")
     embed = discord.Embed(
-        title=f"Tickets de {utilisateur.display_name}",
+        title=f"Tickets de {utilisateur.display_name}", 
         color=embed_color("audit")
     )
     count = 0
@@ -415,15 +476,10 @@ async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
             )
     if count == 0:
         embed.description = "Aucun ticket trouvé."
-    await interaction.response.send_message(embed=embed, allowed_mentions=AllowedMentions(users=True))
-
+    await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
 
 # /earliest
-@bot.tree.command(
-    name="earliest",
-    description="Liste le plus ancien ticket actif",
-    guild=guild_obj
-)
+@bot.tree.command(name="earliest", description="Liste le plus ancien ticket actif", guild=guild_obj)
 async def earliest_tickets(interaction: Interaction):
     await interaction.response.defer()
     tickets = load_json("tickets.json")
@@ -434,7 +490,7 @@ async def earliest_tickets(interaction: Interaction):
             description="Aucun ticket actif.",
             color=embed_color("earliest")
         )
-        await interaction.response.send_message(embed=embed, allowed_mentions=AllowedMentions(users=True))
+        await interaction.response.send_message(embed=embed,allowed_mentions=AllowedMentions(users=True))
         return
 
     for tid, t in tickets.items():
@@ -451,12 +507,15 @@ async def earliest_tickets(interaction: Interaction):
         embed.add_field(name="Montant restant", value=f"`{montant_rest:.2f}€`", inline=False)
         embed.add_field(name="Motif", value=f"`{t['motif']}`", inline=True)
 
-    # view = View()
-    # view.add_item(Button(label="Rembourser", style=discord.ButtonStyle.green, custom_id=f"remb_{tid}"))
-    # view.add_item(Button(label="Fermer", style=discord.ButtonStyle.danger, custom_id=f"close_{tid}"))
+      # view = View()
+      # view.add_item(Button(label="Rembourser", style=discord.ButtonStyle.green, custom_id=f"remb_{tid}"))
+      # view.add_item(Button(label="Fermer", style=discord.ButtonStyle.danger, custom_id=f"close_{tid}"))
 
     await interaction.followup.send(embed=embed, allowed_mentions=AllowedMentions(users=True))
+"""# COMMANDES SLASH
+"""========================
+# LANCEMENT BOT
+# =========================
+bot.run(NUDE_COMPTA_TOKEN)
+"""# LANCEMENT BOT
 
-
-if __name__ == "__main__":
-    bot.run(CONFIG["TOKEN"])
