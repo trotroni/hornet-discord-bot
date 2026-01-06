@@ -2,10 +2,9 @@
 from common.init import create_bot
 from common.langManager import lang_manager
 from common.imports import *
-from common.loggingBot import getLogger
+#from common.loggingBot import getLogger
 
 bot, CONFIG, logger = create_bot("core")
-print(CONFIG)
 
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
 

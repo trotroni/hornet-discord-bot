@@ -4,6 +4,7 @@ import logging
 from discord.ext import commands
 
 from common.loggingBot import getLogger
+logger = getLogger("init.py")
 
 
 class MyBot(commands.Bot):
