@@ -8,7 +8,9 @@ import time
 from common.loggingBot import getLogger
 
 from common.loggingBot import getLogger
-logger = getLogger("start.py")
+from common.init import CONFIG
+
+logger = getLogger("start.py", CONFIG["BOT_NAME"])
 
 # Dossier racine du projet
 project_root = Path(__file__).parent

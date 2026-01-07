@@ -2,12 +2,16 @@
 from common.imports import *
 from dotenv import load_dotenv
 from common.loggingBot import getLogger
-logger = getLogger("config.py")
+from common.init import CONFIG
+
+logger = getLogger("config.py", CONFIG["BOT_NAME"])
+
 # -------------------------------
 # Variables globales pour tous les bots
 # -------------------------------
 BASE_DIR = Path(__file__).parent.parent
 logger.info(f"📁 Dossier de base : {BASE_DIR}")
+
 LOGS_DIR = BASE_DIR / "logs"
 logger.info(f"📁 Dossier des logs : {LOGS_DIR}")
 LOGS_DIR.mkdir(exist_ok=True)
@@ -24,9 +28,6 @@ WARN_FILE = BASE_DIR / "warns.csv"
 logger.info(f"📁 Fichier des warns : {WARN_FILE}")
 WARN_FILE.touch(exist_ok=True)
 
-# -------------------------------
-# Fonction pour charger la config
-# -------------------------------
 def load_bot_config(bot_type: str = ""):
 
     load_dotenv(dotenv_path=BASE_DIR / "var.env")
@@ -47,14 +48,25 @@ def load_bot_config(bot_type: str = ""):
     config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
     config["VERSION"] = os.getenv("VERSION")
     config["ADMIN_ROLE_ID"] = os.getenv("ADMIN_ROLE_ID")
+
+    # DEBUG
+    debug_env = os.getenv("DEBUG", "false").lower()
+    config["DEBUG"] = debug_env in ("1", "true", "yes", "on")
+
     config["BOT_NAME"] = f"nude-{bot_type}-bot"
+
+    if config["DEBUG"]:
+        logger.info(f"🐞 Mode DEBUG activé")
 
     # Vérifications
     if not config["TOKEN"]:
+        logger.error(f"❌ Token manquant pour {bot_type}")
         raise ValueError(f"❌ Token manquant pour {bot_type}")
     if not config["GUILD_ID"]:
+        logger.error("❌ GUILD_ID manquant ou invalide")
         raise ValueError("❌ GUILD_ID manquant ou invalide")
     if not config["CHANNEL_ID_NOTIF"]:
+        logger.error("❌ CHANNEL_ID_NOTIF manquant")
         raise ValueError("❌ CHANNEL_ID_NOTIF manquant")
 
     return config
