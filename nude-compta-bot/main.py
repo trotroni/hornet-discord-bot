@@ -2,13 +2,12 @@
 from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
-from common.loggingBot import getLogger
+import logging
+logger = logging.getLogger(__name__)
 
 bot, CONFIG, logger = create_bot("compta")
 
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
-
-t = lang_manager.get
 
 @bot.event
 async def on_ready():
@@ -20,6 +19,9 @@ async def on_ready():
         logger.critical(f"❌ Langues non chargées : {e}")
         await bot.close()
         return
+
+    global t
+    t = lang_manager.translation_key
 
     logger.info("✅ Compta bot prêt")
 

@@ -1,14 +1,14 @@
 # nude-core-bot/main.py
+from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
-from common.imports import *
-#from common.loggingBot import getLogger
+from common.utils import command_log
+import logging
+logger = logging.getLogger(__name__)
 
 bot, CONFIG, logger = create_bot("core")
 
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
-
-t = lang_manager.get
 
 @bot.event
 async def on_ready():
@@ -23,14 +23,17 @@ async def on_ready():
 
     logger.info("✅ Core bot prêt")
 
+global t
+t = lang_manager.translation_key
+
 # COMMANDES SLASH
 
 # /ping
-@bot.tree.command(name="ping", description="Teste la réactivité du bot")
+@bot.tree.command(name="ping", description=t("core.help.ping"))
 async def ping(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user)
     embed = discord.Embed(
-        title=t(f"info.ping.response"),
-        description=t("bot.online_description"),
+        title=t("core.info.ping.response", time="Maintenat"),
         color=discord.Color.pink()
     )
     await interaction.response.send_message(embed=embed)
@@ -38,9 +41,7 @@ async def ping(interaction: discord.Interaction):
 # /info
 @bot.tree.command(name="info", description="Info sur le bot")
 async def info(interaction: discord.Interaction):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     await interaction.response.send_message(
         t(
             "info.response",
@@ -53,9 +54,7 @@ async def info(interaction: discord.Interaction):
 # /help
 @bot.tree.command(name="help", description="Affiche toutes les commandes disponibles")
 async def help_command(interaction: discord.Interaction):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     embed = discord.Embed(title=t("help_title", interaction), color=discord.Color.blue())
     embed.add_field(name=t("help_system", interaction),
                     value=f"🟢 `/ping`\n🟡 `/reboot`\n🟡 `/upgrade`\n🟡 `/bot.update`",
@@ -79,9 +78,7 @@ async def help_command(interaction: discord.Interaction):
 @bot.tree.command(name="language", description="Change la langue du bot")
 @app_commands.describe(lang="Code de la langue (ex: fr, en)")
 async def language_command(interaction: discord.Interaction, lang: str = None):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     if lang is None:
         embed = discord.Embed(title=t("language_title", interaction), color=discord.Color.blue())
         current_lang = lang_manager.user_preferences.get(interaction.user.id, DEFAULT_LANGUAGE)
@@ -104,9 +101,7 @@ async def language_command(interaction: discord.Interaction, lang: str = None):
 # /list
 @bot.tree.command(name="list", description="Liste toutes les commandes personnalisées")
 async def list_commands(interaction: discord.Interaction):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     if not custom_commands:
         await interaction.response.send_message(t("list_empty", interaction), ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
@@ -121,10 +116,7 @@ async def list_commands(interaction: discord.Interaction):
 @bot.tree.command(name="create", description="Crée une nouvelle commande personnalisée")
 @app_commands.describe(name="Nom de la commande", response="Réponse du bot")
 async def create_command(interaction: discord.Interaction, name: str, response: str):
-    user = interaction.user
-
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
-
+    command_log(interaction.command.name, interaction.user)
     name_lower = name.lower().strip()
 
     if name_lower in custom_commands:
@@ -169,9 +161,7 @@ async def modify_command(
     new_name: Optional[str] = None,
     new_response: Optional[str] = None
 ):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     old_name_lower = old_name.lower().strip()
 
     # Vérifie si la commande existe
@@ -235,9 +225,7 @@ async def modify_command(
 @bot.tree.command(name="delete", description="Supprime une commande personnalisée existante")
 @app_commands.describe(name="Nom de la commande à supprimer")
 async def delete_command(interaction: discord.Interaction, name: str):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     name_lower = name.lower().strip()
 
     # Vérifie si la commande existe
@@ -275,9 +263,7 @@ async def delete_command(interaction: discord.Interaction, name: str):
 @bot.tree.command(name="warn", description="Met un warn à un utilisateur")
 @app_commands.describe(user="Utilisateur", reason="Raison")
 async def warn_command(interaction: discord.Interaction, user: discord.Member, reason: str):
-    cmd_user = interaction.user
-    cmd_name = interaction.command.name
-    logger.info(f"L'utilisateur {cmd_user} a exécuté la commande {cmd_name}")
+    command_log(interaction.command.name, interaction.user)
 
     if not is_admin(interaction):
         await interaction.response.send_message(
@@ -310,9 +296,7 @@ async def warn_command(interaction: discord.Interaction, user: discord.Member, r
 @bot.tree.command(name="warns", description="Voir warns utilisateur")
 @app_commands.describe(user="Utilisateur")
 async def warns_check(interaction: discord.Interaction, user: discord.Member):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     uid = user.id
     data = warns_data.get(uid)
     if not data:
@@ -329,9 +313,7 @@ async def warns_check(interaction: discord.Interaction, user: discord.Member):
 @bot.tree.command(name="unwarn", description="Supprime un warn d'un utilisateur")
 @app_commands.describe(user="Utilisateur", number="Numéro du warn à supprimer (optionnel)")
 async def unwarn_command(interaction: discord.Interaction, user: discord.Member, number: int = None):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     if not is_admin(interaction):
         await interaction.response.send_message("permission_denied", ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
@@ -367,9 +349,7 @@ async def unwarn_command(interaction: discord.Interaction, user: discord.Member,
 @bot.tree.command(name="report", description="Signale un groupe de message au staff")
 @app_commands.describe(nombre="Nombre de messages à signaler (10-50)", reason="Raison du signalement")
 async def report_command(interaction: discord.Interaction, nombre: int, reason: str):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     await interaction.response.send_message(
         "🚧 Fonctionnalité en construction.",
         ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
@@ -378,9 +358,7 @@ async def report_command(interaction: discord.Interaction, nombre: int, reason: 
 # /logs
 @bot.tree.command(name="logs", description="Affiche les derniers logs du bot")
 async def logs_command(interaction: discord.Interaction):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
+    command_log(interaction.command.name, interaction.user)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
     try:
         log_files = sorted(LOGS_DIR.glob("bot.*.log"), reverse=True)
@@ -458,13 +436,12 @@ async def upgrade_command(interaction: discord.Interaction):
 # ----------- Test -----------
 @bot.tree.command(name="test", description="Commande de test")
 async def test_command(interaction: discord.Interaction):
-    user = interaction.user
-    name = interaction.command.name
-    logger.info(f"L'utilisateur {user} a exécuté la commande {name}")
-    await interaction.response.send_message("✅ Test réussi!", ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
-)
-
-
+    command_log(interaction.command.name, interaction.user)
+    embed = discord.Embed(
+        title=t("core.info.test"),
+        color=discord.Color.pink()
+    )
+    await interaction.response.send_message(embed=embed)
 
 if __name__ == "__main__":
     bot.run(CONFIG["TOKEN"])

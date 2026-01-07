@@ -5,10 +5,10 @@
       "author": "Auteur",
       "date": "Date de sortie",
       "ping": {
-        "response": "Pong ! {time}",
-        "footer": "Réponse en {end:.2f} ms"
+        "response": "Pong !"
       },
-      "don_t_understand": "❌ Je ne comprends pas la commande `{command_name}`."
+      "don_t_understand": "❌ Je ne comprends pas la commande `{command_name}`.",
+      "test" : "✅ Test réussi !"
     },
     "permission": {
       "denied": {

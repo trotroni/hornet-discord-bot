@@ -5,16 +5,29 @@ import sys
 from pathlib import Path
 import signal
 import time
-from common.loggingBot import getLogger
-
-from common.loggingBot import getLogger
-from common.init import CONFIG
-
-logger = getLogger("start.py", CONFIG["BOT_NAME"])
+import logging
+from datetime import datetime
 
 # Dossier racine du projet
 project_root = Path(__file__).parent
+logs_dir = project_root / "logs"
+logs_dir.mkdir(exist_ok=True)
 
+session = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[start.py] | launcher | %(asctime)s | %(levelname)s | %(message)s",
+    handlers=[
+        logging.FileHandler(
+            logs_dir / f"launcher_{session}.log",
+            encoding="utf-8"
+        ),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 def main():
     """Lance les deux bots Discord en tant que processus séparés"""

@@ -1,79 +1,52 @@
-"""import logging
-from pathlib import Path
-from datetime import datetime
+# common/loggingBot.py
 
-SESSION_DATE = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-
-# Dossier de logs global
-BASE_LOG_DIR = Path("logs")
-BASE_LOG_DIR.mkdir(exist_ok=True)
-
-# Dossier de session
-SESSION_LOG_DIR = BASE_LOG_DIR / SESSION_DATE
-SESSION_LOG_DIR.mkdir(exist_ok=True)
-
-
-def getLogger(name: str) -> logging.Logger:
-    logger = logging.getLogger(name)
-
-    # Évite les doublons
-    if logger.handlers:
-        return logger
-
-    logger.setLevel(logging.INFO)
-
-    formatter = logging.Formatter(
-        f"[{name}] | %(asctime)s | %(levelname)s | %(message)s"
-    )
-
-    # Fichier de log dans le dossier de session
-    log_file = SESSION_LOG_DIR / f"{name}_{SESSION_DATE}.log"
-    file_handler = logging.FileHandler(log_file, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-
-    # Log console
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
-
-    logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
-
-    return logger
-"""
 import logging
 from pathlib import Path
 from datetime import datetime
 
-SESSION_DATE = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+# Timestamp unique par process (donc par bot)
+_SESSION = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
-BASE_LOG_DIR = Path("logs")
-BASE_LOG_DIR.mkdir(exist_ok=True)
+# Contexte global du process
+_LOG_CONTEXT = {
+    "bot": "UNKNOWN"
+}
 
-SESSION_LOG_DIR = BASE_LOG_DIR / SESSION_DATE
-SESSION_LOG_DIR.mkdir(exist_ok=True)
 
-def getLogger(module_name: str, bot_name: str) -> logging.Logger:
-    logger = logging.getLogger(f"{bot_name}.{module_name}")
+class BotContextFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.bot = _LOG_CONTEXT["bot"]
+        return True
 
-    if logger.handlers:
-        return logger
 
-    logger.setLevel(logging.INFO)
+def configure_logging(bot_name: str, base_dir: Path) -> None:
+    _LOG_CONTEXT["bot"] = bot_name
+
+    # 📁 Dossier logs unique (SANS date)
+    log_dir = base_dir / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    # Évite les doublons si relancé
+    if root_logger.handlers:
+        return
 
     formatter = logging.Formatter(
-        "[%(module)s] | %(bot)s | %(asctime)s | %(levelname)s | %(message)s"
+        "[%(filename)s] | %(bot)s | %(asctime)s | %(levelname)s | %(message)s"
     )
 
-    log_file = SESSION_LOG_DIR / f"{module_name}_{SESSION_DATE}.log"
+    # 📝 Date + heure DANS le nom du fichier
+    log_file = log_dir / f"{bot_name}_{_SESSION}.log"
 
-    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler = logging.FileHandler(
+        log_file,
+        encoding="utf-8"
+    )
     stream_handler = logging.StreamHandler()
 
-    for h in (file_handler, stream_handler):
-        h.setFormatter(formatter)
-        logger.addHandler(h)
-
-    return logging.LoggerAdapter(
-        logger,
-        {"bot": bot_name, "module": module_name}
-    )
+    for handler in (file_handler, stream_handler):
+        handler.setFormatter(formatter)
+        handler.addFilter(BotContextFilter())
+        root_logger.addHandler(handler)
