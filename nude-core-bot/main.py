@@ -33,7 +33,7 @@ t = lang_manager.translation_key
 async def ping(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user)
     embed = discord.Embed(
-        title=t("core.info.ping.response", time="Maintenat"),
+        title=t("core.info.ping.response", time="Maintenant"),
         color=discord.Color.pink()
     )
     await interaction.response.send_message(embed=embed)
@@ -398,7 +398,7 @@ async def reboot_command(interaction: discord.Interaction):
 
     logger.info("🔄 Redémarrage demandé par %s", interaction.user)
     await bot.close()
-    (os.execv(sys.executable, [sys.executable] + sys.argv))
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 @bot.tree.command(name="upgrade", description="Met à jour le bot depuis Git")
 async def upgrade_command(interaction: discord.Interaction):
