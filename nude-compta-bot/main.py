@@ -2,6 +2,9 @@
 from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
+from storage import load_json
+from tickets import create_ticket, rembourse, calcul_solde, close_ticket
+from utils import euros_to_cents, cents_to_euros, embed_color, generate_ticket_id
 import logging
 logger = logging.getLogger(__name__)
 
@@ -65,7 +68,7 @@ async def p2p_ticket(interaction: discord.Interaction,
     )
     embed.add_field(name="Motif", value=f"`{motif}`", inline=False)
 
-    await interaction.response.followup.send(embed=embed, allowed_mentions=AllowedMentions(users=True))
+    await interaction.followup.send(embed=embed, allowed_mentions=AllowedMentions(users=True))
 
 
 # /split_ticket

@@ -15,14 +15,12 @@ from typing import Optional
 
 # --- discord ---
 import discord
-from discord import app_commands
 from discord.ext import commands
-
-# --- discord types exposés directement ---
 from discord import (
     Interaction,
     Embed,
     AllowedMentions,
+    app_commands,
 )
 
 # --- dotenv ---
@@ -37,7 +35,7 @@ __all__ = [
     "discord", "app_commands", "commands",
 
     # discord types
-    "Interaction", "Embed", "AllowedMentions",
+    "Interaction", "Embed", "AllowedMentions", "app_commands",
 
     # dotenv
     "load_dotenv",

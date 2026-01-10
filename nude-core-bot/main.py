@@ -29,7 +29,7 @@ t = lang_manager.translation_key
 # COMMANDES SLASH
 
 # /ping
-@bot.tree.command(name="ping", description=t("core.help.ping"))
+@bot.tree.command(name="ping", description=t("Teste la réactivité du bot"))
 async def ping(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user)
     embed = discord.Embed(
