@@ -8,19 +8,19 @@ import time
 import logging
 from datetime import datetime
 
+_SESSION = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
 # Dossier racine du projet
 project_root = Path(__file__).parent
-logs_dir = project_root / "logs"
-logs_dir.mkdir(exist_ok=True)
-
-session = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+logs_dir = project_root / "logs" / _SESSION.split("_")[0]
+logs_dir.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format="[start.py] | launcher | %(asctime)s | %(levelname)s | %(message)s",
     handlers=[
         logging.FileHandler(
-            logs_dir / f"launcher_{session}.log",
+            logs_dir / f"launcher_{_SESSION}.log",
             encoding="utf-8"
         ),
         logging.StreamHandler(sys.stdout)
