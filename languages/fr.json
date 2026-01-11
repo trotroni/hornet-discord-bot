@@ -1,14 +1,22 @@
 {
   "core": {
-    "info": {
-      "version": "Version",
-      "author": "Auteur",
-      "date": "Date de sortie",
-      "ping": {
-        "response": "Pong !"
-      },
+    "general": {
+      "error": "❌ Une erreur est survenue : {error}",
+      "missing_argument": "❌ Argument manquant : `{argument}`.",
+      "invalid_argument": "❌ Argument invalide pour `{argument}` : `{value}`.",
       "don_t_understand": "❌ Je ne comprends pas la commande `{command_name}`.",
       "test" : "✅ Test réussi !"
+    },
+    "info": {
+      "title": "Stats du bot",
+      "members": "Membres",
+      "servers": "Serveurs",
+      "version": "Version",
+      "uptime": "Temps en ligne",
+      "commands_csv": "Commandes personnalisées"
+    },
+    "ping": {
+      "response": "Pong !"
     },
     "permission": {
       "denied": {

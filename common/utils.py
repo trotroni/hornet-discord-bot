@@ -1,6 +1,8 @@
 # common/utils.py
 from .imports import *
 from common.config import load_bot_config
+import logging
+logger = logging.getLogger(__name__)
 
 def get_ephemeral(interaction, default=True):
     EPHEMERAL_GLOBAL = load_bot_config("ephemeral")

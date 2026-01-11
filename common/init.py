@@ -36,6 +36,7 @@ def create_bot(bot_type: str):
     lang_manager.configure(CONFIG)
 
     intents = discord.Intents.default()
+    intents.members = True
     intents.message_content = True
     intents.guilds = True
 

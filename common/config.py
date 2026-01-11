@@ -32,8 +32,6 @@ def load_bot_config(bot_type: str) -> dict:
         config["TOKEN"] = os.getenv("NUDE_CORE_TOKEN")
     elif bot_type == "compta":
         config["TOKEN"] = os.getenv("NUDE_COMPTA_TOKEN")
-    elif bot_type == "ephemeral":
-        config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
     else:
         raise ValueError("bot_type doit être 'core' ou 'compta'")
 
@@ -42,6 +40,7 @@ def load_bot_config(bot_type: str) -> dict:
     config["CHANNEL_ID_NOTIF"] = os.getenv("CHANNEL_ID_NOTIF")
     config["DEFAULT_LANGUAGE"] = os.getenv("DEFAULT_LANGUAGE", "fr")
     config["VERSION"] = os.getenv("VERSION")
+    config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
 
     debug_env = os.getenv("DEBUG", "false").lower()
     config["DEBUG"] = debug_env in ("1", "true", "yes", "on")

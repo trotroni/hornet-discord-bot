@@ -23,8 +23,8 @@ def configure_logging(bot_name: str, base_dir: Path) -> None:
     _LOG_CONTEXT["bot"] = bot_name
 
     # 📁 Dossier logs unique (SANS date)
-    log_dir = base_dir / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    logs_dir = base_dir / "logs" / _SESSION.split("_")[0]
+    logs_dir.mkdir(parents=True, exist_ok=True)
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
@@ -38,7 +38,7 @@ def configure_logging(bot_name: str, base_dir: Path) -> None:
     )
 
     # 📝 Date + heure DANS le nom du fichier
-    log_file = log_dir / f"{bot_name}_{_SESSION}.log"
+    log_file = logs_dir / f"{bot_name}_{_SESSION}.log"
 
     file_handler = logging.FileHandler(
         log_file,

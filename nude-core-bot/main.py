@@ -10,6 +10,8 @@ bot, CONFIG, logger = create_bot("core")
 
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
 
+START_TIME = datetime.now(timezone.utc)
+
 @bot.event
 async def on_ready():
     logger.info(f"✅ Core bot connecté : {bot.user}")
@@ -33,24 +35,96 @@ t = lang_manager.translation_key
 async def ping(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user)
     embed = discord.Embed(
-        title=t("core.info.ping.response", time="Maintenant"),
+        title=t("core.ping.response", time="Maintenant"),
         color=discord.Color.pink()
     )
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
 
-# /info
-@bot.tree.command(name="info", description="Info sur le bot")
+# /stat
+@bot.tree.command(name="stat", description="Stat sur le bot")
 async def info(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user)
-    await interaction.response.send_message(
-        t(
-            "info.response",
-            interaction,
-            version=VERSION
-        ),
-        ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
-)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
 
+    # Membres locaux
+    guild = interaction.guild
+    if guild is None:
+        users_list_chunks = ["Commande utilisable uniquement dans un serveur"]
+    else:
+        members = sorted([member.mention for member in guild.members])
+        # On découpe en chunks de 1000 caractères pour ne pas dépasser la limite
+        users_list_chunks = []
+        chunk = ""
+        for m in members:
+            if len(chunk) + len(m) + 2 > 1000:  # +2 pour ", "
+                users_list_chunks.append(chunk.rstrip(", "))
+                chunk = ""
+            chunk += m + ", "
+        if chunk:
+            users_list_chunks.append(chunk.rstrip(", "))
+
+    # Serveurs
+    servers_list = ", ".join(g.name for g in bot.guilds)
+    servers_count = len(bot.guilds)
+
+    # Version
+    version = CONFIG["VERSION"]
+
+    # Uptime
+    now = datetime.now(timezone.utc)
+    delta = now - START_TIME
+    days = delta.days
+    hours, remainder = divmod(delta.seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+    uptime_str = f"{days}j {hours}h {minutes}m"
+
+    # UTC dynamique pour footer
+    import time
+    utc_now = int(time.time())
+
+    # Création de l'embed
+    embed = discord.Embed(
+        title=t("core.info.title", time="Maintenant"),
+        color=discord.Color.pink()
+    )
+
+    # Ajouter tous les membres en plusieurs champs si nécessaire
+    for i, chunk in enumerate(users_list_chunks):
+        embed.add_field(
+            name=f"{t('core.info.members')} (part {i+1})" if len(users_list_chunks) > 1 else t("core.info.members"),
+            value=f"```{chunk}```",
+            inline=False
+        )
+
+    # Serveurs
+    embed.add_field(
+        name=t("core.info.servers"),
+        value=f"{servers_count} serveurs :\n{servers_list}",
+        inline=False
+    )
+    embed.add_field(
+        name=t("core.info.version"),
+        value=version,
+        inline=True
+    )
+    embed.add_field(
+        name=t("core.info.uptime"),
+        value=uptime_str,
+        inline=True
+    )
+
+    embed.set_footer(
+        text=f"<t:{utc_now}:F>"
+    )
+
+    await interaction.followup.send(
+        embed=embed,
+        ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
+    )
+
+
+
+"""
 # /help
 @bot.tree.command(name="help", description="Affiche toutes les commandes disponibles")
 async def help_command(interaction: discord.Interaction):
@@ -442,6 +516,6 @@ async def test_command(interaction: discord.Interaction):
         color=discord.Color.pink()
     )
     await interaction.response.send_message(embed=embed)
-
+"""
 if __name__ == "__main__":
     bot.run(CONFIG["TOKEN"])
