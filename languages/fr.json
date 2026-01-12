@@ -9,7 +9,7 @@
     },
     "stat": {
       "title": "Stats du bot",
-      "members": "Membres",
+      "members": "Membres : `{member_count}`",
       "servers": "Serveurs",
       "version": "Version",
       "uptime": "Temps en ligne",

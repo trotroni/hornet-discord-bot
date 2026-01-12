@@ -43,7 +43,7 @@ async def p2p_ticket(interaction: discord.Interaction,
                      crediteur: discord.Member,
                      montant: float,
                      motif: str):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer()
     if debiteur.id == crediteur.id:
         await interaction.response.followup.send("Un utilisateur ne peut pas se devoir à lui-même.", ephemeral=False)
@@ -223,7 +223,7 @@ async def split_ticket(
     montant="Montant remboursé"
 )
 async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montant: float):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
         return
@@ -251,7 +251,7 @@ async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montan
     utilisateur="Utilisateur (optionnel)"
 )
 async def solde(interaction: discord.Interaction, utilisateur: discord.Member | None = None):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     user = utilisateur or interaction.user
     s = calcul_solde(str(user.id))
 
@@ -306,7 +306,7 @@ async def solde(interaction: discord.Interaction, utilisateur: discord.Member | 
     guild=guild_obj
 )
 async def debug_members(interaction: discord.Interaction):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     if interaction.guild is None:
         await interaction.response.send_message("Cette commande doit être utilisée sur un serveur.", ephemeral=False)
         return
@@ -347,7 +347,7 @@ async def debug_members(interaction: discord.Interaction):
     ticket_id="ID du ticket"
 )
 async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     try:
         close_ticket(ticket_id, str(interaction.user.id))
     except Exception as e:
@@ -373,7 +373,7 @@ async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
     motif="Motif"
 )
 async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float, motif: str):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
         return
@@ -404,7 +404,7 @@ async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, cr
     utilisateur="Utilisateur concerné"
 )
 async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     tickets = load_json("tickets.json")
     embed = discord.Embed(
         title=f"Tickets de {utilisateur.display_name}",
@@ -438,7 +438,7 @@ async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
     guild=guild_obj
 )
 async def earliest_tickets(interaction: Interaction):
-    command_log(interaction.command.name, interaction.user)
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer()
     tickets = load_json("tickets.json")
 
