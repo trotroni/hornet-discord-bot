@@ -3,7 +3,6 @@
 import subprocess
 import sys
 from pathlib import Path
-import signal
 import time
 import logging
 from datetime import datetime

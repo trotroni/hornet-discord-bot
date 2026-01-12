@@ -11,3 +11,6 @@ def get_ephemeral(interaction, default=True):
 
 def command_log(command_name: str, user_name: int) -> None:
     logger.info(f"L'utilisateur {user_name} a exécuté la commande {command_name}")
+
+def date_now():
+    return datetime.now(timezone.utc)

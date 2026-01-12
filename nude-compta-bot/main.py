@@ -2,14 +2,13 @@
 from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
+from common.utils import command_log, date_now
 from storage import load_json
 from tickets import create_ticket, rembourse, calcul_solde, close_ticket
 from utils import euros_to_cents, cents_to_euros, embed_color, generate_ticket_id
-import logging
-logger = logging.getLogger(__name__)
 
+#config
 bot, CONFIG, logger = create_bot("compta")
-
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
 
 @bot.event
@@ -23,12 +22,13 @@ async def on_ready():
         await bot.close()
         return
 
-    global t
-    t = lang_manager.translation_key
-
     logger.info("✅ Compta bot prêt")
 
-# COMMANDES SLASH
+# config translation
+global t
+t = lang_manager.translation_key
+
+### COMMANDES SLASH
 
 # /p2p_ticket
 @bot.tree.command(name="p2p_ticket", description="Créer un ticket p2p", guild=guild_obj)
@@ -43,6 +43,7 @@ async def p2p_ticket(interaction: discord.Interaction,
                      crediteur: discord.Member,
                      montant: float,
                      motif: str):
+    command_log(interaction.command.name, interaction.user)
     await interaction.response.defer()
     if debiteur.id == crediteur.id:
         await interaction.response.followup.send("Un utilisateur ne peut pas se devoir à lui-même.", ephemeral=False)
@@ -67,7 +68,7 @@ async def p2p_ticket(interaction: discord.Interaction,
         color=embed_color("p2p")
     )
     embed.add_field(name="Motif", value=f"`{motif}`", inline=False)
-
+    embed.timestamp = date_now()
     await interaction.followup.send(embed=embed, allowed_mentions=AllowedMentions(users=True))
 
 
@@ -203,6 +204,8 @@ async def split_ticket(
         inline=False
     )
 
+    embed.timestamp = date_now()
+
     await interaction.followup.send(
         embed=embed,
         allowed_mentions=discord.AllowedMentions(users=True)
@@ -220,6 +223,7 @@ async def split_ticket(
     montant="Montant remboursé"
 )
 async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montant: float):
+    command_log(interaction.command.name, interaction.user)
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
         return
@@ -247,6 +251,7 @@ async def rembourse_cmd(interaction: discord.Interaction, ticket_id: str, montan
     utilisateur="Utilisateur (optionnel)"
 )
 async def solde(interaction: discord.Interaction, utilisateur: discord.Member | None = None):
+    command_log(interaction.command.name, interaction.user)
     user = utilisateur or interaction.user
     s = calcul_solde(str(user.id))
 
@@ -301,6 +306,7 @@ async def solde(interaction: discord.Interaction, utilisateur: discord.Member | 
     guild=guild_obj
 )
 async def debug_members(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user)
     if interaction.guild is None:
         await interaction.response.send_message("Cette commande doit être utilisée sur un serveur.", ephemeral=False)
         return
@@ -341,6 +347,7 @@ async def debug_members(interaction: discord.Interaction):
     ticket_id="ID du ticket"
 )
 async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
+    command_log(interaction.command.name, interaction.user)
     try:
         close_ticket(ticket_id, str(interaction.user.id))
     except Exception as e:
@@ -365,8 +372,8 @@ async def close_ticket_cmd(interaction: discord.Interaction, ticket_id: str):
     montant="Montant",
     motif="Motif"
 )
-async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float,
-                  motif: str):
+async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, crediteur: discord.Member, montant: float, motif: str):
+    command_log(interaction.command.name, interaction.user)
     if montant <= 0:
         await interaction.response.send_message("Montant invalide.", ephemeral=False)
         return
@@ -397,6 +404,7 @@ async def set_cmd(interaction: discord.Interaction, debiteur: discord.Member, cr
     utilisateur="Utilisateur concerné"
 )
 async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
+    command_log(interaction.command.name, interaction.user)
     tickets = load_json("tickets.json")
     embed = discord.Embed(
         title=f"Tickets de {utilisateur.display_name}",
@@ -430,6 +438,7 @@ async def audit(interaction: discord.Interaction, utilisateur: discord.Member):
     guild=guild_obj
 )
 async def earliest_tickets(interaction: Interaction):
+    command_log(interaction.command.name, interaction.user)
     await interaction.response.defer()
     tickets = load_json("tickets.json")
 
@@ -462,6 +471,6 @@ async def earliest_tickets(interaction: Interaction):
 
     await interaction.followup.send(embed=embed, allowed_mentions=AllowedMentions(users=True))
 
-
+### RUN BOT
 if __name__ == "__main__":
     bot.run(CONFIG["TOKEN"])

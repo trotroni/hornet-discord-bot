@@ -2,15 +2,12 @@
 from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
-from common.utils import command_log
-import logging
-logger = logging.getLogger(__name__)
+from common.utils import command_log, date_now
 
+# config
 bot, CONFIG, logger = create_bot("core")
-
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
-
-START_TIME = datetime.now(timezone.utc)
+START_TIME = date_now()
 
 @bot.event
 async def on_ready():
@@ -25,19 +22,21 @@ async def on_ready():
 
     logger.info("✅ Core bot prêt")
 
+# config translation
 global t
 t = lang_manager.translation_key
 
-# COMMANDES SLASH
+### COMMANDES SLASH
 
 # /ping
 @bot.tree.command(name="ping", description=t("Teste la réactivité du bot"))
 async def ping(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user)
     embed = discord.Embed(
-        title=t("core.ping.response", time="Maintenant"),
+        title=t("core.ping.response"),
         color=discord.Color.pink()
     )
+    embed.timestamp = date_now()
     await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
 
 # /stat
@@ -64,58 +63,50 @@ async def info(interaction: discord.Interaction):
             users_list_chunks.append(chunk.rstrip(", "))
 
     # Serveurs
-    servers_list = ", ".join(g.name for g in bot.guilds)
+    servers_list = ", ".join(f"`{g.name}`" for g in bot.guilds)
     servers_count = len(bot.guilds)
 
     # Version
     version = CONFIG["VERSION"]
 
     # Uptime
-    now = datetime.now(timezone.utc)
-    delta = now - START_TIME
+    delta = date_now() - START_TIME
     days = delta.days
     hours, remainder = divmod(delta.seconds, 3600)
     minutes, _ = divmod(remainder, 60)
     uptime_str = f"{days}j {hours}h {minutes}m"
 
-    # UTC dynamique pour footer
-    import time
-    utc_now = int(time.time())
-
     # Création de l'embed
     embed = discord.Embed(
-        title=t("core.info.title", time="Maintenant"),
+        title=t("core.stat.title"),
         color=discord.Color.pink()
     )
 
-    # Ajouter tous les membres en plusieurs champs si nécessaire
+    # Membres locaux
     for i, chunk in enumerate(users_list_chunks):
         embed.add_field(
-            name=f"{t('core.info.members')} (part {i+1})" if len(users_list_chunks) > 1 else t("core.info.members"),
-            value=f"```{chunk}```",
+            name=f"{t('core.stat.members')} (part {i+1})" if len(users_list_chunks) > 1 else t("core.info.members"),
+            value=chunk,
             inline=False
         )
 
-    # Serveurs
     embed.add_field(
-        name=t("core.info.servers"),
-        value=f"{servers_count} serveurs :\n{servers_list}",
+        name=t("core.stat.servers"),
+        value=f"`{servers_count}` serveurs :\n{servers_list}",
         inline=False
     )
     embed.add_field(
-        name=t("core.info.version"),
-        value=version,
+        name=t("core.stat.version"),
+        value=f"`{version}`",
         inline=True
     )
     embed.add_field(
-        name=t("core.info.uptime"),
-        value=uptime_str,
+        name=t("core.stat.uptime"),
+        value=f"`{uptime_str}`",
         inline=True
     )
 
-    embed.set_footer(
-        text=f"<t:{utc_now}:F>"
-    )
+    embed.timestamp = date_now()
 
     await interaction.followup.send(
         embed=embed,
@@ -145,6 +136,7 @@ async def help_command(interaction: discord.Interaction):
     embed.add_field(name=t("help_lang", interaction),
                     value=f"🟢 `/language`", inline=False)
     embed.set_footer(text=t("help_footer", interaction))
+    embed.timestamp = date_now()
     await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
 
@@ -161,14 +153,17 @@ async def language_command(interaction: discord.Interaction, lang: str = None):
         for lang_code in sorted(lang_manager.available_languages):
             embed.description += f"• `{lang_code}` - {lang_manager.get_language_name(lang_code)}\n"
         embed.set_footer(text=t("language_usage", interaction))
+        embed.timestamp = date_now()
         await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
     else:
         lang = lang.lower().strip()
         if lang_manager.set_user_language(interaction.user.id, lang):
+        # mettre embed
             await interaction.response.send_message(t("language_changed", interaction, language=lang_manager.get_language_name(lang)), ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
         else:
+        # mettre embed
             await interaction.response.send_message(t("language_invalid", interaction, lang=lang), ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
 
@@ -183,6 +178,7 @@ async def list_commands(interaction: discord.Interaction):
     embed = discord.Embed(title=t("list_title", interaction), color=discord.Color.green())
     embed.description = "\n".join([f"• `/{name}`" for name in sorted(custom_commands.keys())])
     embed.set_footer(text=t("list_footer", interaction, count=len(custom_commands)))
+    embed.timestamp = date_now()
     await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
 
@@ -515,6 +511,7 @@ async def test_command(interaction: discord.Interaction):
         title=t("core.info.test"),
         color=discord.Color.pink()
     )
+    embed.timestamp = date_now()
     await interaction.response.send_message(embed=embed)
 """
 if __name__ == "__main__":

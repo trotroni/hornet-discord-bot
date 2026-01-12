@@ -7,7 +7,7 @@
       "don_t_understand": "❌ Je ne comprends pas la commande `{command_name}`.",
       "test" : "✅ Test réussi !"
     },
-    "info": {
+    "stat": {
       "title": "Stats du bot",
       "members": "Membres",
       "servers": "Serveurs",
