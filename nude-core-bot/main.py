@@ -111,8 +111,8 @@ async def info(interaction: discord.Interaction):
         )
 
     embed.add_field(
-        name=t("core.stat.servers"),
-        value=f"`{servers_count}` serveurs :\n{servers_list}",
+        name=t("core.stat.servers", servers_count = servers_count),
+        value=servers_list,
         inline=False
     )
     embed.add_field(
@@ -133,12 +133,17 @@ async def info(interaction: discord.Interaction):
         ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
     )
 
-
-
-"""
 # /help
 @bot.tree.command(name="help", description="Affiche toutes les commandes disponibles")
-async def help_command(interaction: discord.Interaction):
+async def help(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    embed = discord.Embed(
+        title=t("core.general.travaux"),
+        color=discord.Color.yellow()
+    )
+    embed.timestamp = date_now()
+    await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+"""async def help_command(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     embed = discord.Embed(title=t("help_title", interaction), color=discord.Color.blue())
     embed.add_field(name=t("help_system", interaction),
@@ -159,33 +164,53 @@ async def help_command(interaction: discord.Interaction):
     embed.timestamp = date_now()
     await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
 )
+"""
 
 # /language
 @bot.tree.command(name="language", description="Change la langue du bot")
 @app_commands.describe(lang="Code de la langue (ex: fr, en)")
 async def language_command(interaction: discord.Interaction, lang: str = None):
+    # Log de la commande
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+
+    # Création de l'embed
+    embed = discord.Embed(color=discord.Color.blue())
+
+    # Si aucune langue n'est fournie → afficher état actuel + liste
     if lang is None:
-        embed = discord.Embed(title=t("language_title", interaction), color=discord.Color.blue())
-        current_lang = lang_manager.user_preferences.get(interaction.user.id, DEFAULT_LANGUAGE)
-        embed.description = t("language_current", interaction, language=lang_manager.get_language_name(current_lang)) + "\n\n"
-        embed.description += t("language_available", interaction) + "\n"
-        for lang_code in sorted(lang_manager.available_languages):
-            embed.description += f"• `{lang_code}` - {lang_manager.get_language_name(lang_code)}\n"
-        embed.set_footer(text=t("language_usage", interaction))
+        current_lang = lang_manager.user_preferences.get(interaction.user.id, CONFIG["DEFAULT_LANGUAGE"])
+
+        embed.title = t("core.language.title")
+        embed.description = t("core.language.current", language = current_lang) + "\n\n"
+        embed.description += t("core.language.available") + "\n"
+
+        # Liste des langues disponibles
+        for code in sorted(lang_manager.available_languages):
+            # si available_languages est un dict {code: nom_lisible}
+            lang_name = lang_manager.available_languages.get(code, code) if isinstance(lang_manager.available_languages, dict) else code
+            embed.description += f"• `{code}` - {lang_name}\n"
+
+        embed.set_footer(text=t("core.language.usage"))
         embed.timestamp = date_now()
-        await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
-)
+        await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    # Si une langue est fournie → tenter de changer
     else:
         lang = lang.lower().strip()
         if lang_manager.set_user_language(interaction.user.id, lang):
-        # mettre embed
-            await interaction.response.send_message(t("language_changed", interaction, language=lang_manager.get_language_name(lang)), ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
-)
+            # succès
+            lang_name = lang_manager.available_languages.get(lang, lang) if isinstance(lang_manager.available_languages, dict) else lang
+            embed.title = t("core.language.title")
+            embed.description = t("core.language.changed", language = lang_name)
+            embed.color = discord.Color.green()
         else:
-        # mettre embed
-            await interaction.response.send_message(t("language_invalid", interaction, lang=lang), ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
-)
+            # échec
+            embed.title = t("core.language.title")
+            embed.description = t("core.language.invalid", lang = lang)
+            embed.color = discord.Color.red()
+
+        embed.timestamp = date_now()
+        await interaction.response.send_message(embed=embed, ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
 
 # /list
 @bot.tree.command(name="list", description="Liste toutes les commandes personnalisées")
@@ -533,6 +558,6 @@ async def test_command(interaction: discord.Interaction):
     )
     embed.timestamp = date_now()
     await interaction.response.send_message(embed=embed)
-"""
+
 if __name__ == "__main__":
     bot.run(CONFIG["TOKEN"])

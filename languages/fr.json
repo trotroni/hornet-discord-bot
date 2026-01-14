@@ -1,16 +1,19 @@
 {
+  "code" : "fr",
+  "name" : "Français",
   "core": {
     "general": {
       "error": "❌ Une erreur est survenue : {error}",
       "missing_argument": "❌ Argument manquant : `{argument}`.",
       "invalid_argument": "❌ Argument invalide pour `{argument}` : `{value}`.",
       "don_t_understand": "❌ Je ne comprends pas la commande `{command_name}`.",
-      "test" : "✅ Test réussi !"
+      "test" : "✅ Test réussi !",
+      "travaux" : "🚧 Fonctionnalité en construction."
     },
     "stat": {
       "title": "Stats du bot",
       "members": "Membres : `{member_count}`",
-      "servers": "Serveurs",
+      "servers": "Serveurs : `{servers_count}`",
       "version": "Version",
       "uptime": "Temps en ligne",
       "commands_csv": "Commandes personnalisées"
@@ -79,9 +82,9 @@
     },
     "language": {
       "name": "Français",
-      "title": "🌍 Langue du bot",
-      "changed": "✅ Langue changée en **{language}** !",
-      "current": "Langue actuelle : **{language}**",
+      "title": "Langue du bot",
+      "changed": "✅ Langue changée en `{language}` !",
+      "current": "Langue actuelle : `{language}`",
       "available": "Langues disponibles :",
       "usage": "Utilisez /language <code> pour changer de langue",
       "invalid": "❌ Langue `{lang}` non disponible. Utilisez `/language` pour voir les langues disponibles."
