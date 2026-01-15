@@ -1,5 +1,5 @@
 # tickets.py
-from storage import load_json, save_json, log_event
+from common.storage import load_json, save_json, log_event
 from utils import now_iso
 
 # CRÉATION DE TICKET
