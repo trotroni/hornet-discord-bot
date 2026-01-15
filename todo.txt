@@ -11,3 +11,5 @@
 /0/compta : changer les ephemeral
 
 /0/embed.timestamp = date_now() a lla fin e chaque embed
+
+si travaux = true mettre apres chaque commande qu'il peut comporter des bug ou un message perso comme un avertissement ou dire qu'il va y avori une maintenance

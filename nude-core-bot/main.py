@@ -140,7 +140,7 @@ async def info(interaction: discord.Interaction):
 
     embed.add_field(
         name="Le bot peut être instable ou comporter des bugs.",
-        #value=f"`{version}`",
+        value="Merci de votre compréhension",
         inline=True
     )
     await interaction.followup.send(
