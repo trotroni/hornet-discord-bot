@@ -133,6 +133,21 @@ async def info(interaction: discord.Interaction):
         ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
     )
 
+    embed = discord.Embed(
+        title="Il se peut que certaines fonctionnalités soient encore en cours de développement.",
+        color=discord.Color.yellow()
+    )
+
+    embed.add_field(
+        name="Le bot peut être instable ou comporter des bugs.",
+        #value=f"`{version}`",
+        inline=True
+    )
+    await interaction.followup.send(
+        embed=embed,
+        ephemeral=CONFIG["EPHEMERAL_GLOBAL"]
+    )
+
 # /help
 @bot.tree.command(name="help", description="Affiche toutes les commandes disponibles")
 async def help(interaction: discord.Interaction):
