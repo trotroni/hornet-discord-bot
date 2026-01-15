@@ -1,5 +1,4 @@
 # common/config.py
-
 import os
 import logging
 from pathlib import Path
@@ -41,6 +40,7 @@ def load_bot_config(bot_type: str) -> dict:
     config["DEFAULT_LANGUAGE"] = os.getenv("DEFAULT_LANGUAGE", "fr")
     config["VERSION"] = os.getenv("VERSION")
     config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
+    config["TRAVAUX"] = os.getenv("TRAVAUX_ENV", "false").lower() == "true"
 
     debug_env = os.getenv("DEBUG", "false").lower()
     config["DEBUG"] = debug_env in ("1", "true", "yes", "on")
@@ -54,3 +54,13 @@ def load_bot_config(bot_type: str) -> dict:
         raise ValueError("❌ GUILD_ID manquant")
 
     return config
+
+
+# --- Variables globales pour chaque bot ---
+try:
+    CONFIG_CORE = load_bot_config("core")
+    CONFIG_COMPTA = load_bot_config("compta")
+except Exception as e:
+    logger.critical(f"❌ Impossible de charger les configs : {e}")
+    CONFIG_CORE = {}
+    CONFIG_COMPTA = {}
