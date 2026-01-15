@@ -15,6 +15,5 @@ def command_log(command_name: str, user_id: int, user_name: str) -> None:
         f"[{user_name}->id: {user_id}] a exécuté la commande [/{command_name}]"
     )
 
-
 def date_now():
     return datetime.now(timezone.utc)
