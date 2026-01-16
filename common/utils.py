@@ -1,5 +1,4 @@
-from .imports import *
-from common.config import CONFIG_CORE, CONFIG_COMPTA
+from common.config import CONFIG_CORE
 from datetime import datetime, timezone
 from common.langManager import lang_manager
 import discord
@@ -32,7 +31,7 @@ def message_embed() -> discord.Embed:
     embed_message = discord.Embed(
         title=t("embed.message.title"),
         description=t("embed.message.description"),
-        color=discord.Color.dark_red()
+        color=discord.Color.light_embed()
     )
     embed_message.add_field(
         name=t("embed.message.name"),

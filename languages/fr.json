@@ -11,11 +11,11 @@
       "description": "Certaines fonctionnalités peuvent être instables."
       },
     "message" : {
-      "title" : "",
-      "description" : "",
+      "title" : "Title test",
+      "description" : "Description test",
       "add" : {
-        "name" : "",
-        "value" : ""
+        "name" : "Name test",
+        "value" : "Value test"
         }
     },
     "maintenance" : {
