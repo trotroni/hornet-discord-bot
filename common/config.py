@@ -37,13 +37,13 @@ def load_bot_config(bot_type: str) -> dict:
     config["BOT_NAME"] = f"nude-{bot_type}-bot"
     config["GUILD_ID"] = int(os.getenv("GUILD_ID", "0")) or None
     config["CHANNEL_ID_NOTIF"] = os.getenv("CHANNEL_ID_NOTIF")
+    config["GENERAL_CHANNEL_ID"] = os.getenv("GENERAL_CHANNEL_ID")
     config["DEFAULT_LANGUAGE"] = os.getenv("DEFAULT_LANGUAGE", "fr")
     config["VERSION"] = os.getenv("VERSION")
     config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
     config["TRAVAUX"] = os.getenv("TRAVAUX_EMBED", "false").lower() == "true"
     config["MESSAGE"] = os.getenv("MESSAGE_EMBED", "false").lower() == "true"
     config["MAINTENANCE"] = os.getenv("MAINTENANCE_EMBED", "false").lower() == "true"
-
     debug_env = os.getenv("DEBUG", "false").lower()
     config["DEBUG"] = debug_env in ("1", "true", "yes", "on")
 

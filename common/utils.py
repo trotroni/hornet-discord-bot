@@ -113,6 +113,7 @@ def get_cpu_temperature():
     return "N/A"
 
 def cpu_temp_verification(temp_celsius) -> str:
+    channel = client.get_channel(config["GENERAL_CHANNEL_ID"])
     try:
         t = float(temp_celsius)
     except (ValueError, TypeError):

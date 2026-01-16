@@ -10,6 +10,7 @@ guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
 START_TIME = date_now()
 load_custom_commands()
 
+
 @bot.event
 async def on_ready():
     logger.info(f"✅ Core bot connecté : {bot.user}")
@@ -44,6 +45,52 @@ async def on_message(message: discord.Message):
             await message.channel.send(response)
             logger.info(f"Correction automatique appliquée pour {message.author} dans le message : {message.content}")
             break
+
+# -------------- TÂCHES PÉRIODIQUES --------------
+
+# mesure température CPU
+@tasks.loop(minutes=1)
+async def cpu_temp_task():
+    temp = get_cpu_temperature()
+    status = cpu_temp_verification(temp)
+
+    # --- Choix du message et de la couleur ---
+    if temp < 64:
+        return  # rien à signaler → on sort de la task
+
+    elif temp <= 65:
+        title = "🌡 Température CPU"
+        desc = f"Température : `{temp}°C`\nÉtat : `{status}`"
+        color = discord.Color.yellow()
+
+    elif temp < 75:
+        title = "⚠️ Alerte de Température CPU"
+        desc = (
+            f"La température du CPU est de `{temp}°C`.\n"
+            "Veuillez vérifier le système de refroidissement."
+        )
+        color = discord.Color.orange()
+
+    else:
+        title = "🚨 TEMPÉRATURE CRITIQUE"
+        desc = (
+            f"Température critique : `{temp}°C`\n"
+            "**Arrêt du bot recommandé immédiatement !**"
+        )
+        color = discord.Color.red()
+
+    # --- Création de l'embed ---
+    embed = discord.Embed(
+        title=title,
+        description=desc,
+        color=color
+    )
+
+    embed.timestamp = discord.utils.utcnow()
+
+    channel = bot.get_channel(CHANNEL_ID)
+    if channel:
+        await channel.send(embed=embed)
 
 # ---------------- COMMANDES SLASH ----------------
 

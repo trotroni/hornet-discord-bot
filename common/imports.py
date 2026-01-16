@@ -15,7 +15,7 @@ from typing import Optional
 
 # --- discord ---
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import (
     Interaction,
     Embed,
@@ -32,7 +32,7 @@ __all__ = [
     "datetime", "timedelta", "timezone", "Path", "defaultdict", "Optional",
 
     # discord core
-    "discord", "app_commands", "commands",
+    "discord", "app_commands", "commands", "tasks",
 
     # discord types
     "Interaction", "Embed", "AllowedMentions", "app_commands",

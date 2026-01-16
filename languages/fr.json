@@ -3,8 +3,8 @@
   "name": "Français",
   "embed": {
     "bugs" : {
-        "name" : "Merci de votre compréhension",
-        "value" : "Le bot peut avoir des bugs."
+        "name" : "Le bot peut avoir des bugs",
+        "value" : "Merci de votre compréhension"
         },
     "travaux": {
       "title": "⚠\uFE0F Travaux en cours",
