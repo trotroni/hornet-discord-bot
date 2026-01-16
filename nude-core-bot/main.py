@@ -95,11 +95,17 @@ async def info(interaction: discord.Interaction):
     embed.add_field(name=t("core.stat.version"), value=f"`{version}`", inline=True)
     embed.add_field(name=t("core.stat.uptime"), value=f"`{uptime_str}`", inline=True)
 
-    cpu_temp = get_cpu_temperature()
+    cpu_temp_str = get_cpu_temperature()
+    try:
+        cpu_temp = float(cpu_temp_str.replace("'C", ""))
+        status = cpu_temp_verification(cpu_temp)
+        value = f"`{cpu_temp:.1f}°C` — `{status}`"
+    except (ValueError, TypeError):
+        value = "`N/A` — ⚪ Inconnu"
 
     embed.add_field(
         name=t("core.stat.cpu_temp"),
-        value=f"`{cpu_temp}`",
+        value=value,
         inline=True
     )
 
