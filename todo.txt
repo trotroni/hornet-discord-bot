@@ -2,14 +2,6 @@
 
 /0/résoudre les boutons sous les embeds
 
-/0/lignes 165, 169, 178, 196, 207, 216, 242, 250,  du fichier nude-core-bot/main.py mettre sous un format embed
-
 /0/add 'EPHEMERAL_ERROR' -> c'est a dire les renvoie d'erreurs des commandes en message éphémère
 
-/0/command logs a refaire pour core
-
 /0/compta : changer les ephemeral
-
-/0/embed.timestamp = date_now() a lla fin e chaque embed
-
-si travaux = true mettre apres chaque commande qu'il peut comporter des bug ou un message perso comme un avertissement ou dire qu'il va y avori une maintenance

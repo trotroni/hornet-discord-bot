@@ -2,7 +2,7 @@
 from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
-from common.utils import command_log, date_now, send_with_warning
+from common.utils import command_log, date_now, send_with_warning, get_cpu_temperature
 
 ### config
 bot, CONFIG, logger = create_bot("core")
@@ -94,6 +94,15 @@ async def info(interaction: discord.Interaction):
     embed.add_field(name=t("core.stat.servers", servers_count=servers_count), value=servers_list, inline=False)
     embed.add_field(name=t("core.stat.version"), value=f"`{version}`", inline=True)
     embed.add_field(name=t("core.stat.uptime"), value=f"`{uptime_str}`", inline=True)
+
+    cpu_temp = get_cpu_temperature()
+
+    embed.add_field(
+        name=t("core.stat.cpu_temp"),
+        value=f"`{cpu_temp}`",
+        inline=True
+    )
+
     embed.timestamp = date_now()
 
     await send_with_warning(interaction, embeds=[embed])
@@ -450,14 +459,6 @@ async def reboot_command(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
     embed = discord.Embed(color=discord.Color.blue())
-
-    if not is_admin(interaction):
-        embed.title = "Permission refusée"
-        embed.description = t("permission_denied", interaction)
-        embed.color = discord.Color.red()
-        embed.timestamp = date_now()
-        await send_with_warning(interaction, embeds=[embed])
-        return
 
     embed.title = "Redémarrage"
     embed.description = "🔄 Redémarrage du bot..."

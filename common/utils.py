@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from common.langManager import lang_manager
 import discord
 import logging
+import subprocess
 
 logger = logging.getLogger(__name__)
 t = lang_manager.translation_key
@@ -74,3 +75,17 @@ def get_ephemeral(interaction, default=True):
     EPHEMERAL_GLOBAL = load_bot_config("ephemeral")
     print(EPHEMERAL_GLOBAL)
     return EPHEMERAL_GLOBAL if interaction else default
+
+def get_cpu_temperature():
+    try:
+        result = subprocess.run(
+            ["vcgencmd", "measure_temp"],
+            capture_output=True,
+            text=True,
+            timeout=1
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().replace("temp=", "")
+    except Exception:
+        pass
+    return "N/A"
