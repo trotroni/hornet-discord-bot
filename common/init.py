@@ -23,7 +23,6 @@ class MyBot(commands.Bot):
 def create_bot(bot_type: str):
     CONFIG = load_bot_config(bot_type)
 
-    # 🔥 CONFIGURATION LOGGING (UNE FOIS)
     configure_logging(
         bot_name=CONFIG["BOT_NAME"],
         base_dir=Path(__file__).parent.parent

@@ -34,8 +34,8 @@ def message_embed() -> discord.Embed:
         color=discord.Color.light_embed()
     )
     embed_message.add_field(
-        name=t("embed.message.name"),
-        value=t("embed.message.value"),
+        name=t("embed.message.add.name"),
+        value=t("embed.message.add.value"),
         inline=False
     )
     embed_message.timestamp = date_now()
