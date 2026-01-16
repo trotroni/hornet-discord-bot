@@ -51,7 +51,7 @@ async def on_message(message: discord.Message):
 # mesure température CPU
 @tasks.loop(minutes=1)
 async def cpu_temp_task():
-    temp = get_cpu_temperature()
+    temp = 90 #get_cpu_temperature()
     status = cpu_temp_verification(temp)
 
     # --- Choix du message et de la couleur ---
