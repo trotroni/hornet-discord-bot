@@ -1,6 +1,28 @@
 {
-  "code" : "fr",
-  "name" : "Français",
+  "code": "fr",
+  "name": "Français",
+  "embed": {
+    "bugs" : {
+        "name" : "Merci de votre compréhension",
+        "value" : "Le bot peut avoir des bugs."
+        },
+    "travaux": {
+      "title": "⚠\uFE0F Travaux en cours",
+      "description": "Certaines fonctionnalités peuvent être instables."
+      },
+    "message" : {
+      "title" : "",
+      "description" : "",
+      "add" : {
+        "name" : "",
+        "value" : ""
+        }
+    },
+    "maintenance" : {
+      "title" : "\uD83D\uDEA7 Maintenance en cours",
+      "description" : "Certaines fonctionnalités peuvent être temporairement indisponibles."
+      }
+    },
   "core": {
     "general": {
       "error": "❌ Une erreur est survenue : {error}",
