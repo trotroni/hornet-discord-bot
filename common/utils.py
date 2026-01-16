@@ -4,9 +4,31 @@ from common.langManager import lang_manager
 import discord
 import logging
 import subprocess
+import json
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 t = lang_manager.translation_key
+
+custom_commands = {}
+
+CUSTOM_COMMANDS_FILE = Path("custom_commands.json")
+
+def load_custom_commands():
+    global custom_commands
+    if CUSTOM_COMMANDS_FILE.exists():
+        with open(CUSTOM_COMMANDS_FILE, "r", encoding="utf-8") as f:
+            custom_commands = json.load(f)
+    else:
+        custom_commands = {}
+
+def save_custom_commands():
+    try:
+        with open(CUSTOM_COMMANDS_FILE, "w", encoding="utf-8") as f:
+            json.dump(custom_commands, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception:
+        return False
 
 def date_now():
     return datetime.now(timezone.utc)
