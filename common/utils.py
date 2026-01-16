@@ -90,14 +90,19 @@ def get_cpu_temperature():
         pass
     return "N/A"
 
-def cpu_temp_verification(temp_celsius: float) -> str:
-    if temp_celsius < 45:
+def cpu_temp_verification(temp_celsius) -> str:
+    try:
+        t = float(temp_celsius)
+    except (ValueError, TypeError):
+        return "⚪ Inconnu"
+
+    if t < 45:
         return "🟢 Excellent"
-    elif temp_celsius < 55:
+    elif t < 55:
         return "🟢 Normal"
-    elif temp_celsius < 65:
+    elif t < 65:
         return "🟡 Chaud"
-    elif temp_celsius < 75:
+    elif t < 75:
         return "🟠 Élevé"
     else:
         return "🔴 Critique"

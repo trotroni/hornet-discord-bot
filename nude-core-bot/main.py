@@ -2,7 +2,7 @@
 from common.imports import *
 from common.init import create_bot
 from common.langManager import lang_manager
-from common.utils import command_log, date_now, send_with_warning, get_cpu_temperature
+from common.utils import command_log, date_now, send_with_warning, get_cpu_temperature, cpu_temp_verification
 
 ### config
 bot, CONFIG, logger = create_bot("core")
