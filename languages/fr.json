@@ -39,7 +39,7 @@
       "version": "Version",
       "uptime": "Temps en ligne",
       "commands_csv": "Commandes personnalisées",
-      "cpu_temp": "Température CPU",
+      "cpu_temp": "Température CPU"
     },
     "ping": {
       "response": "Pong !"
