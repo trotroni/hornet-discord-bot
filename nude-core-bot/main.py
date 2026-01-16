@@ -24,8 +24,8 @@ async def on_ready():
 
     logger.info("✅ Core bot prêt")
     
-    channel_id = CONFIG["GENERAL_CHANNEL_ID"]
-    channel = bot.get_channel(channel_id)
+
+    channel = bot.get_channel(1417564003760082978)
 
     if channel is None:
         print("❌ Channel général introuvable")
