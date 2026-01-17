@@ -23,7 +23,7 @@ async def on_ready():
         return
 
     logger.info("✅ Core bot prêt")
-    
+    """
 
     channel = bot.get_channel(1417564003760082978)
 
@@ -39,7 +39,7 @@ async def on_ready():
     embed.timestamp = discord.utils.utcnow()
 
     await channel.send(embed=embed)
-    
+    """
 
 # config translation
 t = lang_manager.translation_key
