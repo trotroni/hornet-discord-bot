@@ -40,7 +40,11 @@ async def on_ready():
 
     await channel.send(embed=embed)
     """
-    cpu_temp_task.start()
+    if not cpu_temp_task.is_running():
+            cpu_temp_task.start()
+            logger.info("🧠 Task CPU démarrée")
+        else:
+            logger.warning("⚠️ Task CPU déjà en cours")
 
 # config translation
 t = lang_manager.translation_key
@@ -67,25 +71,26 @@ async def on_message(message: discord.Message):
 # -------------- TÂCHES PÉRIODIQUES --------------
 
 # mesure température CPU
-@tasks.loop(minutes=1)
+@tasks.loop(minutes=3)
 async def cpu_temp_task():
-    temp = 90.2 #get_cpu_temperature()
-    logger.debug(f"Température CPU : {temp}")
+    temp = get_cpu_temperature()
     status = cpu_temp_verification(temp)
 
     if temp < 50:
-        return
+        title = "✅ Température CPU normale"
+        desc = "Tout est OK."
+        color = discord.Color.green()
 
-    elif temp <= 50:
+    elif temp < 65:
         title = "🌡 Température CPU"
         desc = f"Température : `{temp}°C`\nÉtat : `{status}`"
         color = discord.Color.yellow()
 
-    elif temp < 65:
-        title = "⚠️ Alerte de Température CPU"
+    elif temp < 70:
+        title = "⚠️ Alerte Température CPU"
         desc = (
-            f"La température du CPU est de `{temp}°C`.\n"
-            "Veuillez vérifier le système de refroidissement."
+            f"Température élevée : `{temp}°C`\n"
+            "Vérifiez le refroidissement."
         )
         color = discord.Color.orange()
 
@@ -93,22 +98,24 @@ async def cpu_temp_task():
         title = "🚨 TEMPÉRATURE CRITIQUE"
         desc = (
             f"Température critique : `{temp}°C`\n"
-            "**Arrêt du bot recommandé immédiatement !**"
+            "**Arrêt du bot recommandé !**"
         )
         color = discord.Color.red()
 
-    # --- Création de l'embed ---
-    embed = discord.Embed(
-        title=title,
-        description=desc,
-        color=color
-    )
+    channel = bot.get_channel(CONFIG["NERD_CHANNEL_ID"])
+    if not channel:
+        logger.error("❌ Channel CPU introuvable")
+        return
 
+    embed = discord.Embed(title=title, description=desc, color=color)
     embed.timestamp = discord.utils.utcnow()
 
-    channel = bot.get_channel(CONFIG["NERD_CHANNEL_ID"])
-    if channel:
-        await channel.send(embed=embed)
+    await channel.send(embed=embed)
+
+# --- AVANT LE LANCEMENT DU TASK ---
+@cpu_temp_task.before_loop
+async def before_cpu_task():
+    await bot.wait_until_ready()
 
 # ---------------- COMMANDES SLASH ----------------
 
