@@ -43,8 +43,8 @@ async def on_ready():
     if not cpu_temp_task.is_running():
         cpu_temp_task.start()
         logger.info("🧠 Task CPU démarrée")
-        else:
-            logger.warning("⚠️ Task CPU déjà en cours")
+    else:
+        logger.warning("⚠️ Task CPU déjà en cours")
 
 # config translation
 t = lang_manager.translation_key
