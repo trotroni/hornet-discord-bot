@@ -1,12 +1,61 @@
-body { font-family: Arial, sans-serif; margin: 20px; }
-h1 { color: #333; }
-#logs-container { display: flex; flex-direction: column; gap: 10px; }
-.date-block { border: 1px solid #ccc; padding: 10px; }
-.time-block { margin-left: 20px; }
-.type-block { margin-left: 40px; font-style: italic; }
+/* Fond général et texte */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #121212; /* fond noir/gris foncé */
+    color: #eeeeee; /* texte clair */
+}
+
+/* Titres */
+h1 {
+    color: #00ffcc; /* un vert clair pour le titre */
+}
+
+/* Conteneur des logs */
+#logs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Bloc date */
+.date-block {
+    border: 1px solid #333;
+    padding: 10px;
+    background-color: #1e1e1e; /* gris foncé */
+    border-radius: 5px;
+}
+
+/* Bloc heure */
+.time-block {
+    margin-left: 20px;
+}
+
+/* Bloc type */
+.type-block {
+    margin-left: 40px;
+    font-style: italic;
+}
+
+/* Liens fichiers */
+.type-block a {
+    color: #00ccff;
+    text-decoration: none;
+}
+.type-block a:hover {
+    text-decoration: underline;
+}
+
+/* Zone affichage contenu log */
 #log-viewer {
-    background: #f0f0f0;
+    background: #1e1e1e;
     font-family: monospace;
     white-space: pre-wrap;
-    border-radius: 4px;
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 20px;
+    max-height: 400px;
+    overflow-y: scroll;
+    color: #eeeeee;
 }
