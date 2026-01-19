@@ -69,7 +69,7 @@ async def on_message(message: discord.Message):
 # mesure température CPU
 @tasks.loop(minutes=1)
 async def cpu_temp_task():
-    temp = 90,2 #get_cpu_temperature()
+    temp = 90.2 #get_cpu_temperature()
     logger.debug(f"Température CPU : {temp}")
     status = cpu_temp_verification(temp)
 
