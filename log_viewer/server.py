@@ -27,42 +27,40 @@ print(f"--- Server démarré le {datetime.now()} ---")
 class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
-        parsed = urlparse(self.path)
+        parsed = urllib.parse.urlparse(self.path)
+        
         if parsed.path == "/logs":
-            query = parse_qs(parsed.query)
-            date_filter = query.get("date", [None])[0]
-            type_filter = query.get("type", [None])[0]
+            # ... code existant pour lister les fichiers
+            ...
+        
+        elif parsed.path.startswith("/read_log"):
+            # lecture d'un fichier spécifique
+            query = urllib.parse.parse_qs(parsed.query)
+            file_path = query.get("file", [None])[0]
+            if not file_path:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"Missing file parameter")
+                return
 
-            logs = {}
-            for date_folder in sorted(os.listdir(LOG_DIR), reverse=True):
-                if date_filter and date_folder != date_filter:
-                    continue
-                date_path = os.path.join(LOG_DIR, date_folder)
-                if not os.path.isdir(date_path):
-                    continue
-                logs[date_folder] = {}
-                for log_file in sorted(os.listdir(date_path)):
-                    log_type = log_file.split("_")[0]
-                    if type_filter and log_type != type_filter:
-                        continue
-                    try:
-                        time_part = log_file.split("_")[2]
-                        hh_mm = ":".join(time_part.split(":")[:2])
-                    except IndexError:
-                        hh_mm = "unknown"
-                    if hh_mm not in logs[date_folder]:
-                        logs[date_folder][hh_mm] = {}
-                    if log_type not in logs[date_folder][hh_mm]:
-                        logs[date_folder][hh_mm][log_type] = []
-                    logs[date_folder][hh_mm][log_type].append(log_file)
+            # sécuriser pour éviter de lire en dehors de logs
+            safe_path = os.path.abspath(os.path.join(LOG_DIR, file_path))
+            if not safe_path.startswith(os.path.abspath(LOG_DIR)) or not os.path.isfile(safe_path):
+                self.send_response(403)
+                self.end_headers()
+                self.wfile.write(b"Access denied")
+                return
+
+            with open(safe_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
 
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header("Content-type", "text/plain; charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps(logs, indent=2).encode())
+            self.wfile.write(content.encode())
+        
         else:
             super().do_GET()
-
 
 with socketserver.TCPServer(("0.0.0.0", PORT), Handler) as httpd:
     print(f"Serving at http://0.0.0.0:{PORT}")
