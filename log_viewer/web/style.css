@@ -4,3 +4,9 @@ h1 { color: #333; }
 .date-block { border: 1px solid #ccc; padding: 10px; }
 .time-block { margin-left: 20px; }
 .type-block { margin-left: 40px; font-style: italic; }
+#log-viewer {
+    background: #f0f0f0;
+    font-family: monospace;
+    white-space: pre-wrap;
+    border-radius: 4px;
+}
