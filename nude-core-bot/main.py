@@ -41,8 +41,8 @@ async def on_ready():
     await channel.send(embed=embed)
     """
     if not cpu_temp_task.is_running():
-            cpu_temp_task.start()
-            logger.info("🧠 Task CPU démarrée")
+        cpu_temp_task.start()
+        logger.info("🧠 Task CPU démarrée")
         else:
             logger.warning("⚠️ Task CPU déjà en cours")
 
