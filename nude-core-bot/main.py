@@ -40,6 +40,7 @@ async def on_ready():
 
     await channel.send(embed=embed)
     """
+    cpu_temp_task.start()
 
 # config translation
 t = lang_manager.translation_key
@@ -68,12 +69,12 @@ async def on_message(message: discord.Message):
 # mesure température CPU
 @tasks.loop(minutes=1)
 async def cpu_temp_task():
-    temp = 90 #get_cpu_temperature()
+    temp = get_cpu_temperature()
+    logger.debug(f"Température CPU : {temp}")
     status = cpu_temp_verification(temp)
 
-    # --- Choix du message et de la couleur ---
     if temp < 64:
-        return  # rien à signaler → on sort de la task
+        return
 
     elif temp <= 65:
         title = "🌡 Température CPU"
@@ -105,7 +106,7 @@ async def cpu_temp_task():
 
     embed.timestamp = discord.utils.utcnow()
 
-    channel = bot.get_channel(CHANNEL_ID)
+    channel = bot.get_channel(CONFIG["NERD_CHANNEL_ID"])
     if channel:
         await channel.send(embed=embed)
 

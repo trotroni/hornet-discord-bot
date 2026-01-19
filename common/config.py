@@ -37,7 +37,7 @@ def load_bot_config(bot_type: str) -> dict:
     config["BOT_NAME"] = f"nude-{bot_type}-bot"
     config["GUILD_ID"] = int(os.getenv("GUILD_ID", "0")) or None
     config["CHANNEL_ID_NOTIF"] = os.getenv("CHANNEL_ID_NOTIF")
-    config["GENERAL_CHANNEL_ID"] = os.getenv("GENERAL_CHANNEL_ID")
+    config["NERD_CHANNEL_ID"] = os.getenv("NERD_CHANNEL_ID")
     config["DEFAULT_LANGUAGE"] = os.getenv("DEFAULT_LANGUAGE", "fr")
     config["VERSION"] = os.getenv("VERSION")
     config["EPHEMERAL_GLOBAL"] = os.getenv("EPHEMERAL_ENV", "true").lower() == "true"
