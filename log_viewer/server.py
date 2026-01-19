@@ -8,18 +8,17 @@ from datetime import datetime
 import sys
 
 PORT = 8000
-LOG_DIR = "./logs"
+LOG_DIR = "/home/trotroni/nude-discord-bot/logs"
 
 # --- Créer le dossier log du jour ---
 today = datetime.now().strftime("%Y-%m-%d")
-time_str = datetime.now().strftime("%H:%M:%S")
 server_log_dir = os.path.join(LOG_DIR, today)
 os.makedirs(server_log_dir, exist_ok=True)
 
-# nom du fichier de log du serveur
-server_log_file = os.path.join(server_log_dir, f"http_server_{today}_{time_str}.log")
+time_str = datetime.now().strftime("%H:%M:%S")
+server_log_file = os.path.join(server_log_dir, f"server_{today}_{time_str}.log")
 
-# rediriger stdout et stderr vers ce fichier
+# rediriger stdout et stderr du serveur dans ce fichier
 sys.stdout = open(server_log_file, "a", buffering=1)
 sys.stderr = sys.stdout
 
