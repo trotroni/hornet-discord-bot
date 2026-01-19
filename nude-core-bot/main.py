@@ -69,19 +69,19 @@ async def on_message(message: discord.Message):
 # mesure température CPU
 @tasks.loop(minutes=1)
 async def cpu_temp_task():
-    temp = get_cpu_temperature()
+    temp = 90,2 #get_cpu_temperature()
     logger.debug(f"Température CPU : {temp}")
     status = cpu_temp_verification(temp)
 
-    if temp < 64:
+    if temp < 50:
         return
 
-    elif temp <= 65:
+    elif temp <= 50:
         title = "🌡 Température CPU"
         desc = f"Température : `{temp}°C`\nÉtat : `{status}`"
         color = discord.Color.yellow()
 
-    elif temp < 75:
+    elif temp < 65:
         title = "⚠️ Alerte de Température CPU"
         desc = (
             f"La température du CPU est de `{temp}°C`.\n"
