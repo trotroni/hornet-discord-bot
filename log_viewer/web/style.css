@@ -1,0 +1,6 @@
+body { font-family: Arial, sans-serif; margin: 20px; }
+h1 { color: #333; }
+#logs-container { display: flex; flex-direction: column; gap: 10px; }
+.date-block { border: 1px solid #ccc; padding: 10px; }
+.time-block { margin-left: 20px; }
+.type-block { margin-left: 40px; font-style: italic; }
