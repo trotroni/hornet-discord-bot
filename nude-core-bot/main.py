@@ -4,6 +4,7 @@ from common.init import create_bot
 from common.langManager import lang_manager
 from common.utils import command_log, date_now, send_with_warning, get_cpu_temperature, cpu_temp_verification, custom_commands, save_custom_commands, load_custom_commands
 
+
 ### config
 bot, CONFIG, logger = create_bot("core")
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
@@ -69,7 +70,7 @@ async def on_message(message: discord.Message):
             break
 
 # -------------- TÂCHES PÉRIODIQUES --------------
-
+"""
 # mesure température CPU
 @tasks.loop(minutes=3)
 async def cpu_temp_task():
@@ -111,6 +112,64 @@ async def cpu_temp_task():
     embed.timestamp = discord.utils.utcnow()
 
     await channel.send(embed=embed)
+"""
+
+
+@tasks.loop(minutes=1)
+async def cpu_temp_task():
+    temp_raw = get_cpu_temperature()  # peut renvoyer "N/A" ou un string
+    try:
+        temp = float(temp_raw.replace("°C", "").strip())
+    except (ValueError, TypeError):
+        temp = None
+
+    status = cpu_temp_verification(temp) if temp is not None else "⚪ Inconnu"
+
+    # Définition des titres, descriptions et couleurs selon température
+    if temp is None:
+        title = "❌ Température CPU inconnue"
+        desc = "Impossible de lire la température"
+        color = discord.Color.red()
+    elif temp < 50:
+        title = "✅ Température CPU normale"
+        desc = f"Température : `{temp}°C`\nÉtat : `{status}`"
+        color = discord.Color.green()
+    elif temp < 65:
+        title = "🌡 Température CPU élevée"
+        desc = f"Température : `{temp}°C`\nÉtat : `{status}`"
+        color = discord.Color.yellow()
+    elif temp < 75:
+        title = "⚠️ Température CPU critique"
+        desc = f"Température : `{temp}°C`\nVérifiez le refroidissement."
+        color = discord.Color.orange()
+    else:
+        title = "🚨 TEMPÉRATURE CRITIQUE"
+        desc = f"Température : `{temp}°C`\n**Arrêt recommandé !**"
+        color = discord.Color.red()
+
+    # Récupération du channel via la config
+    channel_id = CONFIG.get("NOTIF_CHANNEL_ID")  # ou NOTIF_CHANNEL_ID si tu préfères
+    if not channel_id:
+        logger.error("❌ Channel CPU introuvable : NERD_CHANNEL_ID non défini")
+        return
+
+    try:
+        channel = bot.get_channel(int(channel_id))
+    except Exception:
+        channel = None
+
+    if not channel:
+        logger.error("❌ Channel CPU introuvable : le bot n'a pas accès ou ID incorrect")
+        return
+
+    # Création de l'embed
+    embed = discord.Embed(title=title, description=desc, color=color)
+    embed.set_footer(text="Monitoring CPU")
+    embed.timestamp = discord.utils.utcnow()
+
+    # Envoi de l'embed
+    await channel.send(embed=embed)
+    logger.info(f"✅ Embed CPU envoyé : {title} | Temp: {temp_raw}")
 
 # --- AVANT LE LANCEMENT DU TASK ---
 @cpu_temp_task.before_loop

@@ -1,4 +1,5 @@
-from common.config import CONFIG_CORE
+# common/utils.py
+from common.config import CONFIG_CORE, CONFIG_GENERAL
 from datetime import datetime, timezone
 from common.langManager import lang_manager
 import discord
@@ -94,11 +95,12 @@ async def send_with_warning(
     await interaction.followup.send(embeds=embeds, ephemeral=ephemeral)
 
 def get_ephemeral(interaction, default=True):
-    EPHEMERAL_GLOBAL = load_bot_config("ephemeral")
-    print(EPHEMERAL_GLOBAL)
+    EPHEMERAL_GLOBAL = load_bot_config("core").get("EPHEMERAL_GLOBAL", default)
     return EPHEMERAL_GLOBAL if interaction else default
 
-def get_cpu_temperature():
+def get_cpu_temperature(config: dict = CONFIG_GENERAL):
+    if config.get("DEBUG", True):
+        return "90.0"
     try:
         result = subprocess.run(
             ["vcgencmd", "measure_temp"],

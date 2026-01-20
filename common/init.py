@@ -1,11 +1,10 @@
 # common/init.py
-
 import logging
 from pathlib import Path
 import discord
 from discord.ext import commands
 
-from common.config import load_bot_config
+from common.config import load_bot_config, CONFIG_GENERAL
 from common.loggingBot import configure_logging
 
 
