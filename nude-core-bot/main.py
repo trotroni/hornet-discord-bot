@@ -40,13 +40,13 @@ async def on_ready():
     embed.timestamp = discord.utils.utcnow()
 
     await channel.send(embed=embed)
-    """
+    
     if not cpu_temp_task.is_running():
         cpu_temp_task.start()
         logger.info("🧠 Task CPU démarrée")
     else:
         logger.warning("⚠️ Task CPU déjà en cours")
-
+"""
 # config translation
 t = lang_manager.translation_key
 
@@ -114,7 +114,7 @@ async def cpu_temp_task():
     await channel.send(embed=embed)
 """
 
-
+"""
 @tasks.loop(minutes=1)
 async def cpu_temp_task():
     temp_raw = get_cpu_temperature()  # peut renvoyer "N/A" ou un string
@@ -175,7 +175,7 @@ async def cpu_temp_task():
 @cpu_temp_task.before_loop
 async def before_cpu_task():
     await bot.wait_until_ready()
-
+"""
 # ---------------- COMMANDES SLASH ----------------
 
 # /ping
