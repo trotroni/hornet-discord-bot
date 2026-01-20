@@ -1,40 +1,39 @@
+let cpuChart, ramChart, logsBarChart, errorsBarChart;
+let logsTypeFilter = "nude-core-bot";
+
+async function fetchStatus() {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    document.getElementById('status-text').textContent =
+        `CPU Temp: ${data.cpu_temp}°C, CPU: [${data.cpu_perc.join(", ")}]%, RAM: ${data.ram_perc}%, Bots: Core:${data.bots.core} Compta:${data.bots.compta} Server:${data.bots.server}`;
+    updateCharts(data);
+}
+
 async function fetchLogs() {
-    const res = await fetch('/logs');
+    const res = await fetch('/api/logs');
     const logs = await res.json();
     const container = document.getElementById('logs-container');
     container.innerHTML = '';
-
-    for (const date of Object.keys(logs).sort().reverse()) {
+    const dateKeys = Object.keys(logs).sort().reverse();
+    for (const date of dateKeys) {
         const dateDiv = document.createElement('div');
         dateDiv.className = 'date-block';
         dateDiv.innerHTML = `<strong>Date: ${date}</strong>`;
-
         const times = logs[date];
-        for (const hhmm of Object.keys(times).sort()) {
+        for (const hhmm of Object.keys(times).sort().reverse()) {
             const timeDiv = document.createElement('div');
             timeDiv.className = 'time-block';
             timeDiv.innerHTML = `<strong>${hhmm}</strong>`;
-
             const types = times[hhmm];
             for (const type of Object.keys(types)) {
-                const typeDiv = document.createElement('div');
-                typeDiv.className = 'type-block';
-                typeDiv.innerHTML = `<strong>${type}</strong>: `;
-
-                types[type].forEach(file => {
-                    const fileLink = document.createElement('a');
-                    fileLink.href = "#";
-                    fileLink.textContent = file;
-                    fileLink.style.marginRight = "10px";
-                    fileLink.onclick = async () => {
-                        const contentRes = await fetch(`/read_log?file=${encodeURIComponent(date + '/' + file)}`);
-                        const content = await contentRes.text();
-                        showLogContent(file, content);
-                    };
-                    typeDiv.appendChild(fileLink);
+                if(type !== logsTypeFilter) continue;
+                types[type].forEach(file=>{
+                    const link = document.createElement('a');
+                    link.href = `/web/index.html?file=${encodeURIComponent(date+'/'+file)}`;
+                    link.textContent = file;
+                    link.style.marginRight='10px';
+                    timeDiv.appendChild(link);
                 });
-
-                timeDiv.appendChild(typeDiv);
             }
             dateDiv.appendChild(timeDiv);
         }
@@ -42,21 +41,47 @@ async function fetchLogs() {
     }
 }
 
-// afficher le contenu du log dans une zone dédiée
-function showLogContent(filename, content) {
-    let logViewer = document.getElementById('log-viewer');
-    if (!logViewer) {
-        logViewer = document.createElement('pre');
-        logViewer.id = 'log-viewer';
-        logViewer.style.border = "1px solid #333";
-        logViewer.style.padding = "10px";
-        logViewer.style.marginTop = "20px";
-        logViewer.style.maxHeight = "400px";
-        logViewer.style.overflowY = "scroll";
-        document.body.appendChild(logViewer);
+document.querySelectorAll('#logs-buttons button').forEach(btn=>{
+    btn.onclick=()=>{
+        logsTypeFilter=btn.dataset.type;
+        fetchLogs();
     }
-    logViewer.textContent = `=== ${filename} ===\n\n` + content;
+});
+
+function updateCharts(data){
+    // cpuChart & ramChart
+    const time = new Date().toLocaleTimeString();
+    if(!cpuChart){
+        const ctx=document.getElementById('cpuChart').getContext('2d');
+        cpuChart=new Chart(ctx,{type:'line',data:{labels:[time],datasets:data.cpu_perc.map((c,i)=>({label:'CPU'+i,data:[c],borderColor:`hsl(${i*60},100%,50%)`,fill:false}))},options:{animation:false,scales:{y:{min:0,max:100}}}});
+    } else {
+        cpuChart.data.labels.push(time);
+        cpuChart.data.labels=cpuChart.data.labels.slice(-24);
+        cpuChart.data.datasets.forEach((ds,i)=>{ds.data.push(data.cpu_perc[i]); ds.data=ds.data.slice(-24);});
+        cpuChart.update();
+    }
+
+    if(!ramChart){
+        const ctx=document.getElementById('ramChart').getContext('2d');
+        ramChart=new Chart(ctx,{type:'line',data:{labels:[time],datasets:[{label:'RAM %',data:[data.ram_perc],borderColor:'#0ff',fill:false}]},options:{animation:false,scales:{y:{min:0,max:100}}}});
+    } else {
+        ramChart.data.labels.push(time);
+        ramChart.data.labels=ramChart.data.labels.slice(-24);
+        ramChart.data.datasets[0].data.push(data.ram_perc);
+        ramChart.data.datasets[0].data=ramChart.data[0].slice(-24);
+        ramChart.update();
+    }
 }
 
-setInterval(fetchLogs, 10000);
-fetchLogs();
+function sendCommand(target){
+    fetch(`/api/restart?target=${target}`);
+}
+
+function refreshDashboard(){
+    fetchStatus();
+    fetchLogs();
+}
+
+// rafraîchissement automatique
+setInterval(refreshDashboard,5000);
+refreshDashboard();
