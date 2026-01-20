@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Bot</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<h1>Dashboard Bot & Serveur</h1>
+
+<div id="status">
+    <strong>Status:</strong>
+    <span id="status-text">Chargement...</span>
+</div>
+
+<div id="logs-buttons">
+    <button data-type="nude-core-bot">Core</button>
+    <button data-type="nude-compta-bot">Compta</button>
+    <button data-type="server">Server</button>
+</div>
+
+<div id="logs-container"></div>
+
+<div id="charts">
+    <canvas id="cpuChart" height="100"></canvas>
+    <canvas id="ramChart" height="100"></canvas>
+</div>
+
+<div id="barCharts">
+    <canvas id="logsBarChart" height="100"></canvas>
+    <canvas id="errorsBarChart" height="100"></canvas>
+</div>
+
+<div id="commands">
+    <button onclick="sendCommand('raspberry')">Redémarrer Raspberry</button>
+    <button onclick="refreshDashboard()">Rafraîchir</button>
+</div>
+
+<pre id="log-viewer" style="display:none;"></pre>
+
+<script src="script.js"></script>
+</body>
+</html>
