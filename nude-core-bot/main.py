@@ -128,7 +128,7 @@ async def cpu_temp_task():
     # Définition des titres, descriptions et couleurs selon température
     if temp is None:
         title = "❌ Température CPU inconnue"
-        desc = "Impossible de lire la température"
+        desc = f"Impossible de lire la température\nÉtat : `{status}`"
         color = discord.Color.red()
     elif temp < 50:
         title = "✅ Température CPU normale"
