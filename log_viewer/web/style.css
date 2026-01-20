@@ -59,3 +59,10 @@ h1 {
     overflow-y: scroll;
     color: #eeeeee;
 }
+
+body { background: #121212; color:#eee; font-family: Arial; margin:20px; }
+h1 { color: #00ffcc; }
+button { margin:5px; padding:5px 10px; cursor:pointer; background:#222; color:#0ff; border:none; border-radius:3px;}
+button:hover { background:#333; }
+#logs-container, #charts, #barCharts, #commands { margin-top:20px; }
+#log-viewer { background:#1e1e1e; padding:10px; border:1px solid #333; border-radius:5px; max-height:400px; overflow-y:scroll; display:none; font-family: monospace; color:#eee;}
