@@ -10,12 +10,14 @@ async function fetchStatus() {
     const data = await res.json();
 
     document.getElementById('status-text').textContent =
-        `CPU Temp: ${data.cpu_temp}°C
-        CPU: [${data.cpu_perc.join(", ")}]%
-        RAM: ${data.ram_perc}%
-        Bots:
-        Core:${data.bots.core}
-        Compta:${data.bots.compta}
+        `<br>CPU Temp: ${data.cpu_temp}°C<br>
+        CPU: [${data.cpu_perc.join(", ")}]%<br>
+        <br>
+        RAM: ${data.ram_perc}%<br>
+        <br>
+        Bots:<br>
+        Core:${data.bots.core}<br>
+        Compta:${data.bots.compta}<br>
         Server:${data.bots.server}`;
 
     updateCharts(data);
