@@ -9,19 +9,17 @@ async function fetchStatus() {
     const res = await fetch('/api/status');
     const data = await res.json();
 
-    document.getElementById('status-text').textContent =
-        `<br>CPU Temp: ${data.cpu_temp}°C<br>
-        CPU: [${data.cpu_perc.join(", ")}]%<br>
-        <br>
-        RAM: ${data.ram_perc}%<br>
-        <br>
-        Bots:<br>
-        Core:${data.bots.core}<br>
-        Compta:${data.bots.compta}<br>
-        Server:${data.bots.server}`;
+    document.getElementById('cpu-temp').textContent = data.cpu_temp;
+    document.getElementById('cpu-perc').textContent = data.cpu_perc.join(", ");
+    document.getElementById('ram-perc').textContent = data.ram_perc;
+
+    document.getElementById('bot-core').textContent = data.bots.core;
+    document.getElementById('bot-compta').textContent = data.bots.compta;
+    document.getElementById('bot-server').textContent = data.bots.server;
 
     updateCharts(data);
 }
+
 
 /* =========================
    FETCH LOGS
