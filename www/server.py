@@ -125,7 +125,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             elif path == "/admin":
                 self.path = "/admin/admin.html"
                 return super().do_GET()
-
+            elif path == "/api/admin/status":
+                if not admin_allowed():
+                    self.send_error(403)
+                    return
+                self.send_json({"ok": True})
             elif path == "/api/status":
                 self.send_json({
                     "cpu_temp": self.get_cpu_temp(),
