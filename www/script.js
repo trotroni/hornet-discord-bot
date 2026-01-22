@@ -88,7 +88,7 @@ function updateCharts(data) {
             data: {
                 labels: [time],
                 datasets: data.cpu_perc.map((c, i) => ({
-                    label: `CPU ${i}`,
+                    label: `CPU ${i} – ${c}%`,
                     data: [c],
                     borderColor: `hsl(${i * 60}, 100%, 50%)`,
                     fill: false
@@ -104,7 +104,9 @@ function updateCharts(data) {
         cpuChart.data.labels = cpuChart.data.labels.slice(-MAX_POINTS);
 
         cpuChart.data.datasets.forEach((ds, i) => {
-            ds.data.push(data.cpu_perc[i]);
+            const value = data.cpu_perc[i];
+            ds.label = `CPU ${i} – ${value}%`;
+            ds.data.push(value);
             ds.data = ds.data.slice(-MAX_POINTS);
         });
         cpuChart.update();
@@ -118,7 +120,7 @@ function updateCharts(data) {
             data: {
                 labels: [time],
                 datasets: [{
-                    label: 'CPU Temp (°C)',
+                    label: `CPU Température – ${data.cpu_temp} °C`,
                     data: [data.cpu_temp],
                     borderColor: '#ff4d4d',
                     fill: false
@@ -130,10 +132,12 @@ function updateCharts(data) {
             }
         });
     } else {
+        const temp = data.cpu_temp;
         cpuTempChart.data.labels.push(time);
         cpuTempChart.data.labels = cpuTempChart.data.labels.slice(-MAX_POINTS);
 
-        cpuTempChart.data.datasets[0].data.push(data.cpu_temp);
+        cpuTempChart.data.datasets[0].label = `CPU Température – ${temp} °C`;
+        cpuTempChart.data.datasets[0].data.push(temp);
         cpuTempChart.data.datasets[0].data =
             cpuTempChart.data.datasets[0].data.slice(-MAX_POINTS);
 
@@ -148,7 +152,7 @@ function updateCharts(data) {
             data: {
                 labels: [time],
                 datasets: [{
-                    label: 'RAM (%)',
+                    label: `RAM – ${data.ram_perc}%`,
                     data: [data.ram_perc],
                     borderColor: '#00ffff',
                     fill: false
@@ -160,10 +164,12 @@ function updateCharts(data) {
             }
         });
     } else {
+        const ram = data.ram_perc;
         ramChart.data.labels.push(time);
         ramChart.data.labels = ramChart.data.labels.slice(-MAX_POINTS);
 
-        ramChart.data.datasets[0].data.push(data.ram_perc);
+        ramChart.data.datasets[0].label = `RAM – ${ram}%`;
+        ramChart.data.datasets[0].data.push(ram);
         ramChart.data.datasets[0].data =
             ramChart.data.datasets[0].data.slice(-MAX_POINTS);
 
