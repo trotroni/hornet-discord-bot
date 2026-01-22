@@ -172,7 +172,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         error_dir = os.path.join(base_dir, "errors")
 
-        specific = os.path.join(error_dir, f"{code}.html")
+        # Page spéciale maintenance
+        if code == 503:
+            specific = os.path.join(error_dir, "maintenance.html")
+        else:
+            specific = os.path.join(error_dir, f"{code}.html")
+
         generic = os.path.join(error_dir, "error.html")
 
         # API → JSON
@@ -208,7 +213,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except Exception as e:
             logger.error(f"Erreur chargement page erreur : {e}")
             super().send_error(code, message, explain)
-
 
 # --- Extensions MIME ---
 Handler.extensions_map.update({
