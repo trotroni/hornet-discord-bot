@@ -155,6 +155,49 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                         logs[date][hhmm][typ] = []
                     logs[date][hhmm][typ].append(file)
         return logs
+    
+    def send_error(self, code, message=None, explain=None):
+        logger.warning(f"HTTP {code} sur {self.path}")
+
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        error_dir = os.path.join(base_dir, "errors")
+
+        specific = os.path.join(error_dir, f"{code}.html")
+        generic = os.path.join(error_dir, "error.html")
+
+        # API → JSON
+        if self.path.startswith("/api"):
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "error": code,
+                "message": message or "Erreur serveur"
+            }).encode())
+            return
+
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+
+        try:
+            if os.path.exists(specific):
+                with open(specific, "r", encoding="utf-8") as f:
+                    html = f.read()
+            elif os.path.exists(generic):
+                with open(generic, "r", encoding="utf-8") as f:
+                    html = f.read()
+            else:
+                raise FileNotFoundError
+
+            html = html.replace("{{code}}", str(code))
+            html = html.replace("{{message}}", message or "Erreur")
+
+            self.wfile.write(html.encode("utf-8"))
+
+        except Exception as e:
+            logger.error(f"Erreur chargement page erreur : {e}")
+            super().send_error(code, message, explain)
 
 
 # --- Extensions MIME ---
