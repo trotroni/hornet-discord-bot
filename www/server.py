@@ -112,7 +112,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     subprocess.Popen(["pkill", "-f", target])
                     logger.info(f"Redémarrage du bot {target} déclenché")
                 self.send_json({"success": True})
+                        elif path == "/api/admin/set":
+                code = int(parse_qs(parsed.query).get("code", [503])[0])
+                SERVER_MODE["enabled"] = True
+                SERVER_MODE["code"] = code
+                self.send_json({
+                    "success": True,
+                    "mode": "forced",
+                    "code": code
+                })
 
+            elif path == "/api/admin/disable":
+                SERVER_MODE["enabled"] = False
+                SERVER_MODE["code"] = None
+                self.send_json({
+                    "success": True,
+                    "mode": "normal"
+                })
             else:
                 logger.info(f"Serve file standard : {self.path}")
                 return http.server.SimpleHTTPRequestHandler.do_GET(self)
