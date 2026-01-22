@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Admin serveur</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            background: #0e0e0e;
+            color: #eee;
+            font-family: system-ui, sans-serif;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input, button {
+            padding: 10px;
+            margin-top: 10px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #262626;
+        }
+
+        .status {
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Administration serveur</h1>
+
+<label>Code HTTP à forcer :</label><br>
+<input type="number" id="code" value="503"><br>
+
+<button onclick="enable()">Activer</button>
+<button onclick="disable()">Désactiver</button>
+
+<div class="status" id="status"></div>
+
+<script src="admin.js"></script>
+</body>
+</html>
