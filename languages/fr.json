@@ -42,7 +42,7 @@
       "cpu_temp": "Température CPU"
     },
     "ping": {
-      "response": "Pong !"
+      "response": "Aller !"
     },
     "permission": {
       "denied": {
