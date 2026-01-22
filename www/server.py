@@ -48,15 +48,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         logger.info("%s - %s" % (self.client_address[0], format % args))
 
     def do_GET(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        logger.info(f"Requête GET reçue : {path} depuis {self.client_address[0]}")
         # --- Mode forcé (maintenance / test erreurs) ---
         if SERVER_MODE["enabled"]:
             code = SERVER_MODE["code"] or 503
             self.send_error(code)
+            logger.info(f"Requête GET rejetée : {path} depuis {self.client_address[0]} -> server en mode maintenance avec le code {code}")
             return
-        parsed = urlparse(self.path)
-        path = parsed.path
-        logger.info(f"Requête GET reçue : {path} depuis {self.client_address[0]}")
-
         try:
             if path == "/dashboard":
                 self.path = "/web/dashboard.html"
