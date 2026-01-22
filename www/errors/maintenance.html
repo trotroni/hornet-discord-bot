@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Maintenance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            margin: 0;
+            background: #0c0c0c;
+            color: #eaeaea;
+            font-family: system-ui, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .box {
+            text-align: center;
+            max-width: 520px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            animation: pulse 2.5s infinite;
+        }
+
+        p {
+            opacity: 0.75;
+        }
+
+        button {
+            margin-top: 25px;
+            padding: 10px 20px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #333;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #262626;
+        }
+
+        @keyframes pulse {
+            0%   { opacity: 0.4; }
+            50%  { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>503</h1>
+    <p>Maintenance en cours.<br>Le service sera bientôt de retour.</p>
+    <button onclick="location.reload()">Recharger</button>
+</div>
+
+</body>
+</html>
