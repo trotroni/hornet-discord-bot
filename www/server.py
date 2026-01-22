@@ -11,25 +11,38 @@ import subprocess
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import shutil
+from dotenv import load_dotenv
 
 PORT = 8000
-LOG_DIR = "/home/trotroni/nude-discord-bot/logs"
+LOGS_DIR = "/home/trotroni/nude-discord-bot/logs"
+LOGS_DIR.mkdir(exist_ok=True)
 
-SERVER_MODE = {
-    "enabled": False,
-    "code": None   # ex: 503, 404, 500
-}
+load_dotenv(dotenv_path="/home/trotroni/nude-discord-bot/var.env")
+
+STATE_FILE = os.path.join(os.path.dirname(__file__), "server_state.json")
+
+def load_state():
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    return {"enabled": False, "code": None}
+
+def save_state(state):
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=2)
+
+SERVER_MODE = load_state()
 
 # --- Créer le dossier log du jour ---
-os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(LOGS_DIR, exist_ok=True)
 
 # --- Setup logging ---
 logger = logging.getLogger("ServerLogger")
 logger.setLevel(logging.INFO)
 
 # Rotation quotidienne, 7 jours de backup
-log_file_path = os.path.join(LOG_DIR, "server.log")
-handler = TimedRotatingFileHandler(log_file_path, when="midnight", backupCount=7, encoding="utf-8")
+LOGS_file_path = os.path.join(LOGS_DIR, "server.log")
+handler = TimedRotatingFileHandler(LOGS_file_path, when="midnight", backupCount=7, encoding="utf-8")
 formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -44,7 +57,7 @@ logger.info(f"--- Server démarré le {datetime.now()} ---")
 class Handler(http.server.SimpleHTTPRequestHandler):
 
     # Override pour notre logger
-    def log_message(self, format, *args):
+    def LOGS_message(self, format, *args):
         logger.info("%s - %s" % (self.client_address[0], format % args))
 
     def do_GET(self):
@@ -88,8 +101,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 target = query.get("target", [None])[0]
                 logger.info(f"API /delete appelée pour target={target}")
                 if target:
-                    safe_path = os.path.abspath(os.path.join(LOG_DIR, target))
-                    if safe_path.startswith(os.path.abspath(LOG_DIR)) and os.path.exists(safe_path):
+                    safe_path = os.path.abspath(os.path.join(LOGS_DIR, target))
+                    if safe_path.startswith(os.path.abspath(LOGS_DIR)) and os.path.exists(safe_path):
                         if os.path.isfile(safe_path):
                             os.remove(safe_path)
                             logger.info(f"Fichier supprimé : {safe_path}")
@@ -163,10 +176,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def get_logs(self):
         logs = {}
-        if not os.path.exists(LOG_DIR):
+        if not os.path.exists(LOGS_DIR):
             return logs
-        for date in sorted(os.listdir(LOG_DIR), reverse=True):
-            date_path = os.path.join(LOG_DIR, date)
+        for date in sorted(os.listdir(LOGS_DIR), reverse=True):
+            date_path = os.path.join(LOGS_DIR, date)
             if os.path.isdir(date_path):
                 logs[date] = {}
                 for file in sorted(os.listdir(date_path)):
