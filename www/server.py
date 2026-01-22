@@ -18,6 +18,7 @@ LOGS_DIR = "/home/trotroni/nude-discord-bot/logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
 load_dotenv(dotenv_path="/home/trotroni/nude-discord-bot/var.env")
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
 STATE_FILE = os.path.join(os.path.dirname(__file__), "server_state.json")
 
