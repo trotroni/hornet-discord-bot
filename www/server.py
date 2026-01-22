@@ -15,6 +15,11 @@ import shutil
 PORT = 8000
 LOG_DIR = "/home/trotroni/nude-discord-bot/logs"
 
+SERVER_MODE = {
+    "enabled": False,
+    "code": None   # ex: 503, 404, 500
+}
+
 # --- Créer le dossier log du jour ---
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -43,6 +48,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         logger.info("%s - %s" % (self.client_address[0], format % args))
 
     def do_GET(self):
+        # --- Mode forcé (maintenance / test erreurs) ---
+        if SERVER_MODE["enabled"]:
+            code = SERVER_MODE["code"] or 503
+            self.send_error(code)
+            return
         parsed = urlparse(self.path)
         path = parsed.path
         logger.info(f"Requête GET reçue : {path} depuis {self.client_address[0]}")
