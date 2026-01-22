@@ -1,55 +1,38 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="utf-8">
-    <title>Admin serveur</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body {
-            background: #0e0e0e;
-            color: #eee;
-            font-family: system-ui, sans-serif;
-            padding: 30px;
+<script>
+const API = location.origin;
+
+function setToken() {
+    const token = document.getElementById("token").value;
+    localStorage.setItem("admin_token", token);
+    alert("Token enregistré");
+}
+
+function authFetch(url) {
+    const token = localStorage.getItem("admin_token");
+    return fetch(API + url, {
+        headers: {
+            "Authorization": "Bearer " + token
         }
+    });
+}
 
-        h1 {
-            margin-bottom: 20px;
-        }
+function enableMaintenance(code) {
+    authFetch(`/api/admin/set?code=${code}`)
+        .then(r => r.json())
+        .then(console.log);
+}
 
-        input, button {
-            padding: 10px;
-            margin-top: 10px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            color: #fff;
-        }
+function disableMaintenance() {
+    authFetch(`/api/admin/disable`)
+        .then(r => r.json())
+        .then(console.log);
+}
+</script>
 
-        button {
-            cursor: pointer;
-        }
+<input id="token" placeholder="Admin token">
+<button onclick="setToken()">Sauvegarder</button>
 
-        button:hover {
-            background: #262626;
-        }
+<hr>
 
-        .status {
-            margin-top: 20px;
-            opacity: 0.8;
-        }
-    </style>
-</head>
-<body>
-
-<h1>Administration serveur</h1>
-
-<label>Code HTTP à forcer :</label><br>
-<input type="number" id="code" value="503"><br>
-
-<button onclick="enable()">Activer</button>
-<button onclick="disable()">Désactiver</button>
-
-<div class="status" id="status"></div>
-
-<script src="admin.js"></script>
-</body>
-</html>
+<button onclick="enableMaintenance(503)">Maintenance ON</button>
+<button onclick="disableMaintenance()">Maintenance OFF</button>
