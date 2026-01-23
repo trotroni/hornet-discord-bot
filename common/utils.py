@@ -85,11 +85,11 @@ async def send_with_warning(
     ephemeral: bool = True,
     config: dict = CONFIG_CORE
     ):
-    if config.get("MESSAGE", False):
+    if config.get("MESSAGE_EMBED", False):
         embeds.append(message_embed())
-    if config.get("TRAVAUX", False):
+    if config.get("TRAVAUX_EMBED", False):
         embeds.append(travaux_embed())
-    if config.get("MAINTENANCE", False):
+    if config.get("MAINTENANCE_EMBED", False):
         embeds.append(maintenance_embed())
 
     await interaction.followup.send(embeds=embeds, ephemeral=ephemeral)
