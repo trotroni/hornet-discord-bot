@@ -5,3 +5,5 @@
 /0/add 'EPHEMERAL_ERROR' -> c'est a dire les renvoie d'erreurs des commandes en message éphémère
 
 /0/compta : changer les ephemeral
+
+Commande create ne crée rien et je veux que dans les logs on mette le nom de la commande créée

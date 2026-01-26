@@ -37,6 +37,21 @@ def date_now():
 def command_log(command_name: str, user_id: int, user_name: str) -> None:
     logger.info(f"[{user_name}->id: {user_id}] a exécuté la commande [/{command_name}]")
 
+async def send_with_warning(
+    interaction: discord.Interaction,
+    embeds: list[discord.Embed],
+    ephemeral: bool = True,
+    config: dict = CONFIG_CORE
+    ):
+    if config.get("MESSAGE_EMBED", False):
+        embeds.append(message_embed())
+    if config.get("TRAVAUX_EMBED", False):
+        embeds.append(travaux_embed())
+    if config.get("MAINTENANCE_EMBED", False):
+        embeds.append(maintenance_embed())
+
+    await interaction.followup.send(embeds=embeds, ephemeral=ephemeral)
+
 def travaux_embed() -> discord.Embed:
     embed_travaux = discord.Embed(
         title=t("embed.travaux.title"),
@@ -78,21 +93,6 @@ def maintenance_embed() -> discord.Embed:
     )
     embed_maintenance.timestamp = date_now()
     return embed_maintenance
-
-async def send_with_warning(
-    interaction: discord.Interaction,
-    embeds: list[discord.Embed],
-    ephemeral: bool = True,
-    config: dict = CONFIG_CORE
-    ):
-    if config.get("MESSAGE_EMBED", False):
-        embeds.append(message_embed())
-    if config.get("TRAVAUX_EMBED", False):
-        embeds.append(travaux_embed())
-    if config.get("MAINTENANCE_EMBED", False):
-        embeds.append(maintenance_embed())
-
-    await interaction.followup.send(embeds=embeds, ephemeral=ephemeral)
 
 def get_ephemeral(interaction, default=True):
     EPHEMERAL_GLOBAL = load_bot_config("core").get("EPHEMERAL_GLOBAL", default)

@@ -179,7 +179,7 @@ async def before_cpu_task():
 # ---------------- COMMANDES SLASH ----------------
 
 # /ping
-@bot.tree.command(name="biere", description=t("""Teste l'alcoolémie du bot"""))
+@bot.tree.command(name="biere", description=(("""Teste l'alcoolémie du bot"""))
 async def ping(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
@@ -252,17 +252,17 @@ async def help_command(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
 
-    embed = discord.Embed(title=t("help_title", interaction), color=discord.Color.blue())
-    embed.add_field(name=t("help_system", interaction),
+    embed = discord.Embed(title=t("core.help_title", interaction), color=discord.Color.blue())
+    embed.add_field(name=t("core.help.system", interaction),
                     value="🟢 `/ping`\n🟡 `/reboot`\n🟡 `/upgrade`\n🟡 `/bot.update`", inline=False)
-    embed.add_field(name=t("help_csv", interaction),
+    embed.add_field(name=t("core.help.csv", interaction),
                     value="🟢 `/create`\n🟢 `/modif`\n🟢 `/delete`\n🟢 `/list`\n🟢 `/reload_commands`", inline=False)
     embed.add_field(name="⚠️ Modération",
                     value="🟠 `/warn`\n🟠 `/warns`\n🟠 `/unwarn`", inline=False)
     embed.add_field(name="📜 Logs",
                     value="🔵 `/logs`\n🔵 `/systemlog`", inline=False)
-    embed.add_field(name=t("help_lang", interaction), value="🟢 `/language`", inline=False)
-    embed.set_footer(text=t("help_footer", interaction))
+    embed.add_field(name=t("core.help.lang", interaction), value="🟢 `/language`", inline=False)
+    embed.set_footer(text=t("core.help.footer", interaction))
     embed.timestamp = date_now()
 
     await send_with_warning(interaction, embeds=[embed])
@@ -306,12 +306,12 @@ async def list_commands(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
 
-    embed = discord.Embed(title=t("list_title", interaction), color=discord.Color.green())
+    embed = discord.Embed(title=t("core.list.title", interaction), color=discord.Color.green())
     if not custom_commands:
-        embed.description = t("list_empty", interaction)
+        embed.description = t("core.list.empty", interaction)
     else:
         embed.description = "\n".join([f"• `/{name}`" for name in sorted(custom_commands.keys())])
-    embed.set_footer(text=t("list_footer", interaction, count=len(custom_commands)))
+    embed.set_footer(text=t("core.list.footer", interaction, count=len(custom_commands)))
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
@@ -327,17 +327,17 @@ async def create_command(interaction: discord.Interaction, name: str, response: 
     name_lower = name.lower().strip()
     if name_lower in custom_commands:
         embed.title = "Commande existante"
-        embed.description = t("create_exists", interaction, name=name_lower)
+        embed.description = t("core.create.exists", interaction, name=name_lower)
         embed.color = discord.Color.red()
     else:
         custom_commands[name_lower] = response.strip()
         if save_custom_commands():
             embed.title = "Commande créée"
-            embed.description = t("create_success", interaction, name=name_lower)
+            embed.description = t("core.create.success", interaction, name=name_lower)
             embed.color = discord.Color.green()
         else:
             embed.title = "Erreur"
-            embed.description = t("create_error", interaction)
+            embed.description = t("core.create.error", interaction)
             embed.color = discord.Color.red()
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
@@ -362,11 +362,11 @@ async def modify_command(
 
     if old_name_lower not in custom_commands:
         embed.title = "Commande introuvable"
-        embed.description = t("modif_not_found", interaction, name=old_name_lower)
+        embed.description = t("core.modif.not_found", interaction, name=old_name_lower)
         embed.color = discord.Color.red()
     elif not new_name and not new_response:
         embed.title = "Aucune modification"
-        embed.description = t("modif_no_change", interaction, name=old_name_lower)
+        embed.description = t("core.modif.no_change", interaction, name=old_name_lower)
         embed.color = discord.Color.orange()
     else:
         try:
@@ -374,7 +374,7 @@ async def modify_command(
                 new_name_lower = new_name.lower().strip()
                 if new_name_lower != old_name_lower and new_name_lower in custom_commands:
                     embed.title = "Nom déjà utilisé"
-                    embed.description = t("modif_name_exists", interaction, name=new_name_lower)
+                    embed.description = t("core.modif_name_exists", interaction, name=new_name_lower)
                     embed.color = discord.Color.red()
                     await send_with_warning(interaction, embeds=[embed])
                     return
@@ -384,11 +384,11 @@ async def modify_command(
                 custom_commands[old_name_lower] = new_response.strip()
             if save_custom_commands():
                 embed.title = "Modification réussie"
-                embed.description = t("modif_success", interaction, name=old_name_lower)
+                embed.description = t("core.modif_success", interaction, name=old_name_lower)
                 embed.color = discord.Color.green()
             else:
                 embed.title = "Erreur"
-                embed.description = t("modif_error", interaction, name=old_name_lower)
+                embed.description = t("core.modif_error", interaction, name=old_name_lower)
                 embed.color = discord.Color.red()
         except Exception as e:
             logger.error(f"Erreur lors de la modification d'une commande : {e}")
@@ -411,23 +411,23 @@ async def delete_command(interaction: discord.Interaction, name: str):
 
     if name_lower not in custom_commands:
         embed.title = "Commande introuvable"
-        embed.description = t("delete_not_found", interaction, name=name_lower)
+        embed.description = t("core.delete_not_found", interaction, name=name_lower)
         embed.color = discord.Color.red()
     else:
         try:
             del custom_commands[name_lower]
             if save_custom_commands():
                 embed.title = "Commande supprimée"
-                embed.description = t("delete_success", interaction, name=name_lower)
+                embed.description = t("core.delete_success", interaction, name=name_lower)
                 embed.color = discord.Color.green()
             else:
                 embed.title = "Erreur"
-                embed.description = t("delete_error", interaction, name=name_lower)
+                embed.description = t("core.delete_error", interaction, name=name_lower)
                 embed.color = discord.Color.red()
         except Exception as e:
             logger.error(f"Erreur lors de la suppression d'une commande : {e}")
             embed.title = "Erreur"
-            embed.description = t("delete_exception", interaction, name=name_lower)
+            embed.description = t("core.delete_exception", interaction, name=name_lower)
             embed.color = discord.Color.red()
 
     embed.timestamp = date_now()
@@ -444,7 +444,7 @@ async def warn_command(interaction: discord.Interaction, user: discord.Member, r
 
     if not is_admin(interaction):
         embed.title = "Permission refusée"
-        embed.description = t("permission_denied", interaction)
+        embed.description = t("core.permission_denied", interaction)
         embed.color = discord.Color.red()
         embed.timestamp = date_now()
         await send_with_warning(interaction, embeds=[embed])
@@ -504,7 +504,7 @@ async def unwarn_command(interaction: discord.Interaction, user: discord.Member,
 
     if not is_admin(interaction):
         embed.title = "Permission refusée"
-        embed.description = t("permission_denied", interaction)
+        embed.description = t("core.permission_denied", interaction)
         embed.color = discord.Color.red()
         embed.timestamp = date_now()
         await send_with_warning(interaction, embeds=[embed])
@@ -618,7 +618,7 @@ async def upgrade_command(interaction: discord.Interaction):
 
     if not is_admin(interaction):
         embed.title = "Permission refusée"
-        embed.description = t("permission_denied", interaction)
+        embed.description = t("core.permission_denied", interaction)
         embed.color = discord.Color.red()
         embed.timestamp = date_now()
         await send_with_warning(interaction, embeds=[embed])
