@@ -179,7 +179,7 @@ async def before_cpu_task():
 # ---------------- COMMANDES SLASH ----------------
 
 # /ping
-@bot.tree.command(name="biere", description=(("""Teste l'alcoolémie du bot"""))
+@bot.tree.command(name="biere", description="Teste l'alcoolémie du bot")
 async def ping(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
