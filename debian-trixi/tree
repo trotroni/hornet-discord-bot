@@ -1,0 +1,18 @@
+/usr/local/bin/
+├── fan_pwm              ← commande utilisateur (set PWM / read RPM)
+sudo chmod +x /usr/local/bin/fan_pwm
+
+├── fan_autocontrol.sh   ← script du service (auto temp)
+sudo chmod +x /usr/local/bin/fan_autocontrol.sh
+
+/etc/fan/
+├── fan.conf             ← règles température → PWM
+├── fan_pwm.txt          ← valeur PWM actuelle (0–100)
+├── fan_rpm.txt          ← vitesse actuelle en RPM
+
+/etc/systemd/system/
+├── fan-autocontrol.service
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable fan-autocontrol
+sudo systemctl start fan-autocontrol

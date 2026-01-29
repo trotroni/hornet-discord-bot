@@ -41,8 +41,17 @@
       "commands_csv": "Commandes personnalisées",
       "cpu_temp": "Température CPU"
     },
+    "biere": {
+      "response1": "🍺 Santé !",
+      "response2": "🍺 À ta santé !",
+      "response3": "🍺 Tchin !",
+      "response4": "🍺 Cheers !",
+      "response5": "🍺 Prost !",
+      "response6": "🍺 Salute !",
+      "response7": "🍺 Skål !"
+    },
     "ping": {
-      "response": "Aller ! 🍺"
+      "response": "Pong !"
     },
     "permission": {
       "denied": {

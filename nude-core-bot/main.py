@@ -24,8 +24,9 @@ async def on_ready():
         return
 
     logger.info("✅ Core bot prêt")
-    """
 
+    # message envoyé au demarrage
+    """
     channel = bot.get_channel(1417564003760082978)
 
     if channel is None:
@@ -40,13 +41,14 @@ async def on_ready():
     embed.timestamp = discord.utils.utcnow()
 
     await channel.send(embed=embed)
-    
+    """
+    # démarrage task cpu
     if not cpu_temp_task.is_running():
         cpu_temp_task.start()
         logger.info("🧠 Task CPU démarrée")
     else:
         logger.warning("⚠️ Task CPU déjà en cours")
-"""
+
 # config translation
 t = lang_manager.translation_key
 
@@ -72,16 +74,17 @@ async def on_message(message: discord.Message):
 # -------------- TÂCHES PÉRIODIQUES --------------
 """
 # mesure température CPU
-@tasks.loop(minutes=3)
+@tasks.loop(minutes=10)
 async def cpu_temp_task():
     temp = get_cpu_temperature()
     status = cpu_temp_verification(temp)
 
     if temp < 50:
+        
         title = "✅ Température CPU normale"
         desc = "Tout est OK."
         color = discord.Color.green()
-
+        return
     elif temp < 65:
         title = "🌡 Température CPU"
         desc = f"Température : `{temp}°C`\nÉtat : `{status}`"
@@ -114,8 +117,8 @@ async def cpu_temp_task():
     await channel.send(embed=embed)
 """
 
-"""
-@tasks.loop(minutes=1)
+
+@tasks.loop(minutes=60)
 async def cpu_temp_task():
     temp_raw = get_cpu_temperature()  # peut renvoyer "N/A" ou un string
     try:
@@ -175,18 +178,42 @@ async def cpu_temp_task():
 @cpu_temp_task.before_loop
 async def before_cpu_task():
     await bot.wait_until_ready()
-"""
+
 # ---------------- COMMANDES SLASH ----------------
 
-# /ping
+# /biere
 @bot.tree.command(name="biere", description="Teste l'alcoolémie du bot")
+async def biere(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    a = randint(1, 7)
+    if a == 1:
+        embed = discord.Embed(title=t("core.biere.response1"), color=discord.Color.pink())
+    elif a == 2:
+        embed = discord.Embed(title=t("core.biere.response2"), color=discord.Color.pink())
+    elif a == 3:
+        embed = discord.Embed(title=t("core.biere.response3"), color=discord.Color.pink())
+    elif a == 4:
+        embed = discord.Embed(title=t("core.biere.response4"), color=discord.Color.pink())
+    elif a == 5:
+        embed = discord.Embed(title=t("core.biere.response5"), color=discord.Color.pink())
+    elif a == 6:
+        embed = discord.Embed(title=t("core.biere.response6"), color=discord.Color.pink())
+    elif a == 7:
+        embed = discord.Embed(title=t("core.biere.response7"), color=discord.Color.pink())
+
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# /ping
+@bot.tree.command(name="ping", description="Teste l'alcoolémie du bot")
 async def ping(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
     embed = discord.Embed(title=t("core.ping.response"), color=discord.Color.pink())
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
-
 
 # /stat
 @bot.tree.command(name="stat", description="Stat sur le bot")
