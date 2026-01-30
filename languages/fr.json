@@ -127,6 +127,85 @@
       "name_exists": "❌ Une autre commande du nom `{name}` existe déjà.",
       "success": "✅ La commande personnalisée `{name}` a été mise à jour avec succès.",
       "error": "⚠️ Une erreur est survenue lors de la mise à jour de la commande `{name}`."
+    },
+    "play": {
+      "title": "Lecture",
+      "voice_required": "Tu dois être dans un salon vocal pour lancer la musique.",
+      "now_playing": "🎵 Lecture en cours : **{title}**"
+    },
+    "stop": {
+      "title": "Arrêt",
+      "stopped": "⏹️ Lecture arrêtée et bot déconnecté."
+    },
+    "skip": {
+      "title": "Passage",
+      "skipped": "⏭️ Musique passée.",
+      "nothing_playing": "⚠️ Aucune musique en cours."
+    },
+    "pause": {
+      "title": "Pause",
+      "paused": "⏸️ Musique mise en pause.",
+      "nothing_playing": "⚠️ Aucune musique à mettre en pause."
+    },
+    "resume": {
+      "title": "Reprise",
+      "resumed": "▶️ Musique reprise.",
+      "nothing_paused": "⚠️ Aucune musique en pause."
+    },
+    "queue": {
+      "title": "File d'attente",
+      "empty": "⚪ La file d'attente est vide."
+    },
+    "nowplaying": {
+      "title": "Musique en cours",
+      "nothing": "⚪ Aucune musique en cours.",
+      "current": "🎵 Musique en cours : **{title}**"
+    },
+    "volume": {
+      "title": "Volume",
+      "nothing": "⚠️ Aucune musique en cours pour changer le volume.",
+      "invalid": "⚠️ Volume invalide. Veuillez entrer un nombre entre 0 et 100.",
+      "set": "🔊 Volume réglé à {level}%."
+    },
+    "repeat": {
+      "title": "Répétition",
+      "status": "🔁 Répétition : {state}"
+    },
+    "shuffle": {
+      "title": "Mélange",
+      "empty": "⚪ La file d'attente est vide, impossible de mélanger.",
+      "done": "🔀 File d'attente mélangée."
+    },
+    "clear": {
+      "title": "Vidage",
+      "done": "🗑️ File d'attente vidée."
+    },
+    "playadd": {
+      "title": "Liste provisoire",
+      "added": "✅ Lien ajouté à la liste provisoire : {url}"
+    },
+    "addlist": {
+      "title": "Ajout playlist",
+      "added": "✅ Lien ajouté à la playlist {number} : {url}"
+    },
+    "playlist": {
+      "title": "Playlist",
+      "not_found": "⚠️ Playlist {number} introuvable.",
+      "started": "▶️ Playlist {number} lancée avec {count} liens."
+    },
+    "list": {
+      "title": "Liste des playlists",
+      "none": "⚪ Aucune playlist existante.",
+      "all": "📂 Playlists existantes :",
+      "not_found": "⚠️ Playlist {number} introuvable.",
+      "details": "📜 Contenu de la playlist {number} :"
+    },
+    "deletelist": {
+      "title": "Suppression playlist",
+      "not_found": "⚠️ Playlist {number} introuvable.",
+      "deleted": "🗑️ Playlist {number} supprimée.",
+      "invalid_index": "⚠️ Numéro de morceau invalide {index} dans la playlist {number}.",
+      "deleted_item": "🗑️ Morceau #{index} supprimé de la playlist {number} : {url}"
     }
   },
   "compta": {

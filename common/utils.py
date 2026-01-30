@@ -7,6 +7,8 @@ import logging
 import subprocess
 import json
 from pathlib import Path
+import yt_dlp
+from collections import deque
 
 logger = logging.getLogger(__name__)
 t = lang_manager.translation_key
@@ -41,13 +43,14 @@ async def send_with_warning(
     interaction: discord.Interaction,
     embeds: list[discord.Embed],
     ephemeral: bool = True,
-    config: dict = CONFIG_CORE
+    config: dict = CONFIG_GENERAL
     ):
-    if config.get("MESSAGE_EMBED", False):
+
+    if config.get("MESSAGE", False):
         embeds.append(message_embed())
-    if config.get("TRAVAUX_EMBED", False):
+    if config.get("TRAVAUX", False):
         embeds.append(travaux_embed())
-    if config.get("MAINTENANCE_EMBED", False):
+    if config.get("MAINTENANCE", False):
         embeds.append(maintenance_embed())
 
     await interaction.followup.send(embeds=embeds, ephemeral=ephemeral)
@@ -130,3 +133,73 @@ def cpu_temp_verification(temp_celsius) -> str:
         return "🟠 Élevé"
     else:
         return "🔴 Critique"
+
+YTDL_OPTIONS = {
+    "format": "bestaudio/best",
+    "quiet": True,
+    "default_search": "ytsearch",
+    "nocheckcertificate": True,
+}
+
+FFMPEG_OPTIONS = {
+    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+    "options": "-vn"
+}
+
+def get_audio_source(query: str):
+    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ydl:
+        info = ydl.extract_info(query, download=False)
+
+        if "entries" in info:
+            info = info["entries"][0]
+
+        return {
+            "title": info.get("title"),
+            "url": info.get("url")
+        }
+
+
+class AudioQueue:
+    def __init__(self):
+        self.queue = deque()
+
+    def add(self, item):
+        self.queue.append(item)
+
+    def next(self):
+        if self.queue:
+            return self.queue.popleft()
+        return None
+
+    def clear(self):
+        self.queue.clear()
+
+    def empty(self):
+        return len(self.queue) == 0
+
+# fichier de stockage des playlists
+PLAYLIST_FILE = Path("common/data/playlists.json")
+
+# dictionnaire global des playlists
+playlists = {}  # {number: [url1, url2, ...]}
+
+def save_playlists():
+    """Sauvegarde les playlists dans le fichier JSON"""
+    try:
+        with PLAYLIST_FILE.open("w", encoding="utf-8") as f:
+            json.dump(playlists, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"❌ Erreur sauvegarde playlists : {e}")
+        return False
+
+def load_playlists():
+    """Charge les playlists depuis le fichier JSON"""
+    global playlists
+    if PLAYLIST_FILE.exists():
+        try:
+            with PLAYLIST_FILE.open("r", encoding="utf-8") as f:
+                playlists = json.load(f)
+        except Exception as e:
+            print(f"❌ Erreur lecture playlists : {e}")
+            playlists = {}

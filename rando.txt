@@ -1,0 +1,39 @@
+HK bot:
+/rando [seed: ...] [heure: ...] => renvoi un embed avec la seed, si c'est programmer l'heure du debut(si possible en compte a rebours), on crée un événement
+Renvoie le protocole de connection au cas ou pour 'randomizer4'
+
+/randorules => choix des règles, droit ou paps le droit a tel choose etc
+Fonctionnement :
+- On envoie la commande une fois
+- la command renvoie tout les règlements
+- on envoie un message normal en mettant e numéro des règles qu'on veut en true
+- renvoie d''un dernier embed pour confirmer
+
+/seed => genere un seed dans un embed
+
+/indice => envoie dans le chat vocal un son pour donner un indice, on a droit a un nombre limiter d'indice
+
+/randoteam => Command qui choisi aléatoirement par les personne si il sont chasseur ou chassé 
+(si tout le monde est chassé ou chasseur c'est un speed run)
+(dans le cas d'un speed run, en fonction du % etc... 
+On attribue un elo, voir si il y a un vrai system pour ca)
+
+On message:
+Condition : après avoir démarrer le rondo
+action: Lis les messages "finish"/"terminer" etc, regarde qui l'as envoyé
+Consequence: Fait gagner l'équipe correspondante au joueur détecté
+Renvoie le temps de jeu et stocke le résultat
+
+
+[] non optionnel
+{} optionnel
+musicBot:
+/start => fait une effort quand meme
+/stop => - -
+/skip
+/play [url: https://exemple.com]
+/playadd [url: https://exemple.com] => crée une list provisoire, et ajoute le lien
+/addlist [number: numero dans la list] [url: https://exemple.com] => ajoute le lien a la list, si deja pris, on décale tout le reste vers le bas
+/playlist [number: numero de la list] => joue la list
+/list {number: numero de la list} => {liste tout les liens et nom des musiques} sinon list toute les list
+/deletelist [number: numero de la list] {number: numero dans la list}

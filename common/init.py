@@ -7,6 +7,11 @@ from discord.ext import commands
 from common.config import load_bot_config, CONFIG_GENERAL
 from common.loggingBot import configure_logging
 
+from common.utils import AudioQueue
+
+audio_queue = AudioQueue()
+voice_client = None
+
 
 class MyBot(commands.Bot):
     def __init__(self, config: dict, **kwargs):

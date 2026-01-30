@@ -1,9 +1,8 @@
 # nude-core-bot/main.py
 from common.imports import *
-from common.init import create_bot
+from common.init import *
 from common.langManager import lang_manager
-from common.utils import command_log, date_now, send_with_warning, get_cpu_temperature, cpu_temp_verification, custom_commands, save_custom_commands, load_custom_commands
-
+from common.utils import *
 
 ### config
 bot, CONFIG, logger = create_bot("core")
@@ -51,6 +50,8 @@ async def on_ready():
 
 # config translation
 t = lang_manager.translation_key
+
+load_playlists()
 
 ### correction auto
 @bot.event
@@ -181,6 +182,328 @@ async def before_cpu_task():
 
 # ---------------- COMMANDES SLASH ----------------
 
+# ---------------- PLAY ----------------
+@bot.tree.command(name="play", description="Lit une musique depuis YouTube")
+@app_commands.describe(query="Titre ou lien YouTube")
+async def play_command(interaction: discord.Interaction, query: str):
+    global voice_client
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    # Vérification que l'utilisateur est dans un salon vocal
+    if interaction.user.voice is None or interaction.user.voice.channel is None:
+        embed = discord.Embed(
+            title=t("core.play.title"),
+            description=t("core.play.voice_required"),
+            color=discord.Color.red()
+        )
+        embed.timestamp = date_now()
+        await send_with_warning(interaction, embeds=[embed])
+        return
+
+    channel = interaction.user.voice.channel
+
+    # Connexion au salon si nécessaire
+    if voice_client is None or not voice_client.is_connected():
+        voice_client = await channel.connect()
+
+    # Récupération de la source audio
+    audio = get_audio_source(query)
+    audio_queue.add(audio)
+
+    # Jouer immédiatement si rien n'est en cours
+    if not voice_client.is_playing():
+        await _play_next(interaction)
+
+    embed = discord.Embed(
+        title=t("core.play.title"),
+        description=t("core.play.now_playing").format(title=audio["title"]),
+        color=discord.Color.green()
+    )
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- STOP ----------------
+@bot.tree.command(name="stop", description="Arrête la lecture et déconnecte le bot")
+async def stop_command(interaction: discord.Interaction):
+    global voice_client
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    if voice_client:
+        audio_queue.clear()
+        await voice_client.disconnect()
+        voice_client = None
+
+    embed = discord.Embed(
+        title=t("core.stop.title"),
+        description=t("core.stop.stopped"),
+        color=discord.Color.green()
+    )
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- SKIP ----------------
+@bot.tree.command(name="skip", description="Passe la musique en cours")
+async def skip_command(interaction: discord.Interaction):
+    global voice_client
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.skip.title"), color=discord.Color.green())
+    if voice_client and voice_client.is_playing():
+        voice_client.stop()
+        embed.description = t("core.skip.skipped")
+    else:
+        embed.color = discord.Color.red()
+        embed.description = t("core.skip.nothing_playing")
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- PAUSE ----------------
+@bot.tree.command(name="pause", description="Met en pause la musique en cours")
+async def pause_command(interaction: discord.Interaction):
+    global voice_client
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.pause.title"), color=discord.Color.green())
+    if voice_client and voice_client.is_playing():
+        voice_client.pause()
+        embed.description = t("core.pause.paused")
+    else:
+        embed.color = discord.Color.red()
+        embed.description = t("core.pause.nothing_playing")
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- RESUME ----------------
+@bot.tree.command(name="resume", description="Reprend la musique mise en pause")
+async def resume_command(interaction: discord.Interaction):
+    global voice_client
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.resume.title"), color=discord.Color.green())
+    if voice_client and voice_client.is_paused():
+        voice_client.resume()
+        embed.description = t("core.resume.resumed")
+    else:
+        embed.color = discord.Color.red()
+        embed.description = t("core.resume.nothing_paused")
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- QUEUE ----------------
+@bot.tree.command(name="queue", description="Affiche la file d'attente des musiques")
+async def queue_command(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.queue.title"), color=discord.Color.green())
+    if audio_queue.empty():
+        embed.color = discord.Color.red()
+        embed.description = t("core.queue.empty")
+    else:
+        embed.description = "\n".join([f"{i+1}. {item['title']}" for i, item in enumerate(audio_queue.queue)])
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- NOW PLAYING ----------------
+@bot.tree.command(name="nowplaying", description="Affiche la musique en cours")
+async def nowplaying_command(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.nowplaying.title"), color=discord.Color.green())
+    if not voice_client or not voice_client.is_playing():
+        embed.color = discord.Color.red()
+        embed.description = t("core.nowplaying.nothing")
+    else:
+        current = audio_queue.current()
+        embed.description = t("core.nowplaying.current").format(title=current["title"])
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- VOLUME ----------------
+@bot.tree.command(name="volume", description="Change le volume de la musique")
+@app_commands.describe(level="Niveau de volume (0 à 100)")
+async def volume_command(interaction: discord.Interaction, level: int):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.volume.title"), color=discord.Color.green())
+    if not voice_client or not voice_client.is_playing():
+        embed.color = discord.Color.red()
+        embed.description = t("core.volume.nothing")
+    elif level < 0 or level > 100:
+        embed.color = discord.Color.red()
+        embed.description = t("core.volume.invalid")
+    else:
+        audio_queue.set_volume(level / 100)
+        embed.description = t("core.volume.set").format(level=level)
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- REPEAT ----------------
+@bot.tree.command(name="repeat", description="Active ou désactive la répétition de la musique")
+async def repeat_command(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    audio_queue.toggle_repeat()
+    state = "on" if audio_queue.repeat else "off"
+    embed = discord.Embed(
+        title=t("core.repeat.title"),
+        description=t("core.repeat.status").format(state=state),
+        color=discord.Color.green()
+    )
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- SHUFFLE ----------------
+@bot.tree.command(name="shuffle", description="Mélange la file d'attente")
+async def shuffle_command(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.shuffle.title"), color=discord.Color.green())
+    if audio_queue.empty():
+        embed.color = discord.Color.red()
+        embed.description = t("core.shuffle.empty")
+    else:
+        audio_queue.shuffle()
+        embed.description = t("core.shuffle.done")
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- CLEAR ----------------
+@bot.tree.command(name="clear", description="Vide la file d'attente")
+async def clear_command(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    audio_queue.clear()
+    embed = discord.Embed(
+        title=t("core.clear.title"),
+        description=t("core.clear.done"),
+        color=discord.Color.green()
+    )
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- PLAYADD ----------------
+@bot.tree.command(name="playadd", description="Ajoute un lien à la liste provisoire")
+@app_commands.describe(url="Lien de la musique à ajouter")
+async def playadd_command(interaction: discord.Interaction, url: str):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    if not hasattr(audio_queue, "temp_list"):
+        audio_queue.temp_list = []
+    audio_queue.temp_list.append(url)
+
+    embed = discord.Embed(
+        title=t("core.playadd.title"),
+        description=t("core.playadd.added").format(url=url),
+        color=discord.Color.green()
+    )
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- ADDLIST ----------------
+@bot.tree.command(name="addlist", description="Ajoute un lien à une playlist existante")
+@app_commands.describe(number="Numéro de la playlist", url="Lien de la musique à ajouter")
+async def addlist_command(interaction: discord.Interaction, number: int, url: str):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    playlist = playlists.get(number, [])
+    playlist.append(url)
+    playlists[number] = playlist
+    save_playlists()
+
+    embed = discord.Embed(
+        title=t("core.addlist.title"),
+        description=t("core.addlist.added").format(number=number, url=url),
+        color=discord.Color.green()
+    )
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- PLAYLIST ----------------
+@bot.tree.command(name="playlist", description="Joue une playlist")
+@app_commands.describe(number="Numéro de la playlist à jouer")
+async def playlist_command(interaction: discord.Interaction, number: int):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    playlist = playlists.get(number)
+    embed = discord.Embed(title=t("core.playlist.title"), color=discord.Color.green())
+    if not playlist:
+        embed.color = discord.Color.red()
+        embed.description = t("core.playlist.not_found").format(number=number)
+    else:
+        for url in playlist:
+            audio_queue.add(url)
+        embed.description = t("core.playlist.started").format(number=number, count=len(playlist))
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- LIST ----------------
+@bot.tree.command(name="list", description="Liste les playlists ou leur contenu")
+@app_commands.describe(number="Numéro de la playlist (optionnel)")
+async def list_command(interaction: discord.Interaction, number: int = None):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    embed = discord.Embed(title=t("core.list.title"), color=discord.Color.green())
+    if number is None:
+        if not playlists:
+            embed.color = discord.Color.red()
+            embed.description = t("core.list.none")
+        else:
+            embed.description = "\n".join([f"{num}: {len(pl)} liens" for num, pl in playlists.items()])
+    else:
+        pl = playlists.get(number)
+        if not pl:
+            embed.color = discord.Color.red()
+            embed.description = t("core.list.not_found").format(number=number)
+        else:
+            embed.description = "\n".join([f"{i+1}. {url}" for i, url in enumerate(pl)])
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# ---------------- DELETELIST ----------------
+@bot.tree.command(name="deletelist", description="Supprime une playlist ou un élément")
+@app_commands.describe(number="Numéro de la playlist", index="Numéro du morceau à supprimer (optionnel)")
+async def deletelist_command(interaction: discord.Interaction, number: int, index: int = None):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    pl = playlists.get(number)
+    embed = discord.Embed(title=t("core.deletelist.title"), color=discord.Color.green())
+    if not pl:
+        embed.color = discord.Color.red()
+        embed.description = t("core.deletelist.not_found").format(number=number)
+    elif index is None:
+        del playlists[number]
+        save_playlists()
+        embed.description = t("core.deletelist.deleted").format(number=number)
+    else:
+        if index < 1 or index > len(pl):
+            embed.color = discord.Color.red()
+            embed.description = t("core.deletelist.invalid_index").format(number=number, index=index)
+        else:
+            removed = pl.pop(index - 1)
+            playlists[number] = pl
+            save_playlists()
+            embed.description = t("core.deletelist.deleted_item").format(number=number, index=index, url=removed)
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+
+
 # /biere
 @bot.tree.command(name="biere", description="Teste l'alcoolémie du bot")
 async def biere(interaction: discord.Interaction):
@@ -272,7 +595,7 @@ async def info(interaction: discord.Interaction):
 
     await send_with_warning(interaction, embeds=[embed])
 
-
+"""
 # /help
 @bot.tree.command(name="help", description="Affiche toutes les commandes disponibles")
 async def help_command(interaction: discord.Interaction):
@@ -293,7 +616,7 @@ async def help_command(interaction: discord.Interaction):
     embed.timestamp = date_now()
 
     await send_with_warning(interaction, embeds=[embed])
-
+"""
 
 # /language
 @bot.tree.command(name="language", description="Change la langue du bot")
@@ -326,7 +649,7 @@ async def language_command(interaction: discord.Interaction, lang: str = None):
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
-
+"""
 # /list
 @bot.tree.command(name="list", description="Liste toutes les commandes personnalisées")
 async def list_commands(interaction: discord.Interaction):
@@ -680,7 +1003,7 @@ async def test_command(interaction: discord.Interaction):
     embed = discord.Embed(title=t("core.info.test"), color=discord.Color.pink())
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
-
+"""
 
 if __name__ == "__main__":
     bot.run(CONFIG["TOKEN"])
