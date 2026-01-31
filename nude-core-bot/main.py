@@ -338,7 +338,7 @@ async def nowplaying_command(interaction: discord.Interaction):
         embed.description = t("core.nowplaying.nothing")
     else:
         current = audio_queue.current()
-        embed.description = t("core.nowplaying.current").format(title=current["title"])
+        embed.description = t("core.nowplaying.current", title=current["title"])
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
@@ -358,7 +358,7 @@ async def volume_command(interaction: discord.Interaction, level: int):
         embed.description = t("core.volume.invalid")
     else:
         audio_queue.set_volume(level / 100)
-        embed.description = t("core.volume.set").format(level=level)
+        embed.description = t("core.volume.set", level=level)
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
@@ -372,7 +372,7 @@ async def repeat_command(interaction: discord.Interaction):
     state = "on" if audio_queue.repeat else "off"
     embed = discord.Embed(
         title=t("core.repeat.title"),
-        description=t("core.repeat.status").format(state=state),
+        description=t("core.repeat.status", state=state),
         color=discord.Color.green()
     )
     embed.timestamp = date_now()
@@ -422,7 +422,7 @@ async def playadd_command(interaction: discord.Interaction, url: str):
 
     embed = discord.Embed(
         title=t("core.playadd.title"),
-        description=t("core.playadd.added").format(url=url),
+        description=t("core.playadd.added", url=url),
         color=discord.Color.green()
     )
     embed.timestamp = date_now()
@@ -442,7 +442,7 @@ async def addlist_command(interaction: discord.Interaction, number: int, url: st
 
     embed = discord.Embed(
         title=t("core.addlist.title"),
-        description=t("core.addlist.added").format(number=number, url=url),
+        description=t("core.addlist.added", number=number, url=url),
         color=discord.Color.green()
     )
     embed.timestamp = date_now()
@@ -459,11 +459,11 @@ async def playlist_command(interaction: discord.Interaction, number: int):
     embed = discord.Embed(title=t("core.playlist.title"), color=discord.Color.green())
     if not playlist:
         embed.color = discord.Color.red()
-        embed.description = t("core.playlist.not_found").format(number=number)
+        embed.description = t("core.playlist.not_found", number=number)
     else:
         for url in playlist:
             audio_queue.add(url)
-        embed.description = t("core.playlist.started").format(number=number, count=len(playlist))
+        embed.description = t("core.playlist.started", number=number, count=len(playlist))
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
@@ -485,7 +485,7 @@ async def list_command(interaction: discord.Interaction, number: int = None):
         pl = playlists.get(number)
         if not pl:
             embed.color = discord.Color.red()
-            embed.description = t("core.list.not_found").format(number=number)
+            embed.description = t("core.list.not_found", number=number)
         else:
             embed.description = "\n".join([f"{i+1}. {url}" for i, url in enumerate(pl)])
     embed.timestamp = date_now()
@@ -502,20 +502,20 @@ async def deletelist_command(interaction: discord.Interaction, number: int, inde
     embed = discord.Embed(title=t("core.deletelist.title"), color=discord.Color.green())
     if not pl:
         embed.color = discord.Color.red()
-        embed.description = t("core.deletelist.not_found").format(number=number)
+        embed.description = t("core.deletelist.not_found", number=number)
     elif index is None:
         del playlists[number]
         save_playlists()
-        embed.description = t("core.deletelist.deleted").format(number=number)
+        embed.description = t("core.deletelist.deleted", number=number)
     else:
         if index < 1 or index > len(pl):
             embed.color = discord.Color.red()
-            embed.description = t("core.deletelist.invalid_index").format(number=number, index=index)
+            embed.description = t("core.deletelist.invalid_index", number=number, index=index)
         else:
             removed = pl.pop(index - 1)
             playlists[number] = pl
             save_playlists()
-            embed.description = t("core.deletelist.deleted_item").format(number=number, index=index, url=removed)
+            embed.description = t("core.deletelist.deleted_item", number=number, index=index, url=removed)
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
