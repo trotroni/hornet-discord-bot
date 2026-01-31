@@ -234,7 +234,7 @@ async def play_command(interaction: discord.Interaction, query: str):
 
     embed = discord.Embed(
         title=t("core.play.title"),
-        description=t("core.play.now_playing").format(title=audio["title"]),
+        description=t("core.play.now_playing", title=audio.get("title", "Inconnu")),
         color=discord.Color.green()
     )
     embed.timestamp = date_now()
