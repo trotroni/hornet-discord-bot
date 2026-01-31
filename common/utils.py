@@ -179,6 +179,7 @@ class AudioQueue:
 
 # fichier de stockage des playlists
 PLAYLIST_FILE = Path("common/data/playlists.json")
+print(PLAYLIST_FILE)
 
 # dictionnaire global des playlists
 playlists = {}  # {number: [url1, url2, ...]}
