@@ -223,6 +223,23 @@ async def play_command(interaction: discord.Interaction, query: str):
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
+# ---------------- Lecture suivante interne ----------------
+async def _play_next(interaction: discord.Interaction):
+    global voice_client
+    next_audio = audio_queue.next()
+    if not next_audio:
+        return
+
+    source = discord.FFmpegPCMAudio(next_audio["url"], **FFMPEG_OPTIONS)
+
+    def after_playing(error):
+        if error:
+            print(error)
+        # relancer la lecture
+        bot.loop.create_task(_play_next(interaction))
+
+    voice_client.play(source, after=after_playing)
+
 # ---------------- STOP ----------------
 @bot.tree.command(name="stop", description="Arrête la lecture et déconnecte le bot")
 async def stop_command(interaction: discord.Interaction):
