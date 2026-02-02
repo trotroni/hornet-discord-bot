@@ -134,6 +134,18 @@ def cpu_temp_verification(temp_celsius) -> str:
     else:
         return "🔴 Critique"
 
+def get_fan_pwm(config: dict = CONFIG_GENERAL):
+    try:
+        result = subprocess.run(
+            ["fan_pwm", "read", "pwm"],
+            capture_output=True,
+            text=True,
+            timeout=1
+        )
+    except Exception:
+        pass
+    return result
+
 YTDL_OPTIONS = {
     "format": "bestaudio/best",
     "quiet": True,

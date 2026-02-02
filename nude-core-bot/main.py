@@ -608,6 +608,18 @@ async def info(interaction: discord.Interaction):
         inline=True
     )
 
+    pwm_fan_str = get_fan_pwm()
+    try:
+        value = f"{pwm_fan_str} %"
+    except (ValueError, TypeError):
+        value = "`N/A` — Inconnu"
+
+    embed.add_field(
+        name=t("core.stat.fan_pwm"),
+        value=value,
+        inline=True
+    )
+
     embed.timestamp = date_now()
 
     await send_with_warning(interaction, embeds=[embed])
