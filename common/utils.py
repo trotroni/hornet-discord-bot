@@ -142,6 +142,8 @@ def get_fan_pwm(config: dict = CONFIG_GENERAL):
             text=True,
             timeout=1
         )
+        if result.returncode == 0:
+            return result.stdout.strip()
     except Exception:
         pass
     return result
