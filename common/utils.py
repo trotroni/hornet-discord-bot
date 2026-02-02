@@ -146,7 +146,7 @@ def get_fan_pwm(config: dict = CONFIG_GENERAL):
             return result.stdout.strip()
     except Exception:
         pass
-    return result
+    return "`N/A` — `Inconnu`"
 
 YTDL_OPTIONS = {
     "format": "bestaudio/best",

@@ -610,7 +610,7 @@ async def info(interaction: discord.Interaction):
 
     pwm_fan_str = get_fan_pwm()
     try:
-        value = f"{pwm_fan_str} %"
+        value = f"`{pwm_fan_str} %`"
     except (ValueError, TypeError):
         value = "`N/A` — Inconnu"
 
