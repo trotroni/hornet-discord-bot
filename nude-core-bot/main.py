@@ -133,7 +133,7 @@ async def cpu_temp_task():
 
     # Envoi de l'embed
     await channel.send(embed=embed)
-    logger.info(f"✅ Embed CPU envoyé : {title} | Temp: {temp_raw}")
+    logger.info(f"✅ Embed CPU envoyé : {title} | Temp: {temp_raw} | PWM: {value_pwm}")
 
 # --- AVANT LE LANCEMENT DU TASK ---
 @cpu_temp_task.before_loop
