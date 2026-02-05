@@ -73,55 +73,9 @@ async def on_message(message: discord.Message):
             break
 
 # -------------- TÂCHES PÉRIODIQUES --------------
-"""
-# mesure température CPU
-@tasks.loop(minutes=10)
-async def cpu_temp_task():
-    temp = get_cpu_temperature()
-    status = cpu_temp_verification(temp)
-
-    if temp < 50:
-        
-        title = "✅ Température CPU normale"
-        desc = "Tout est OK."
-        color = discord.Color.green()
-        return
-    elif temp < 65:
-        title = "🌡 Température CPU"
-        desc = f"Température : `{temp}°C`\nÉtat : `{status}`"
-        color = discord.Color.yellow()
-
-    elif temp < 70:
-        title = "⚠️ Alerte Température CPU"
-        desc = (
-            f"Température élevée : `{temp}°C`\n"
-            "Vérifiez le refroidissement."
-        )
-        color = discord.Color.orange()
-
-    else:
-        title = "🚨 TEMPÉRATURE CRITIQUE"
-        desc = (
-            f"Température critique : `{temp}°C`\n"
-            "**Arrêt du bot recommandé !**"
-        )
-        color = discord.Color.red()
-
-    channel = bot.get_channel(CONFIG["NERD_CHANNEL_ID"])
-    if not channel:
-        logger.error("❌ Channel CPU introuvable")
-        return
-
-    embed = discord.Embed(title=title, description=desc, color=color)
-    embed.timestamp = discord.utils.utcnow()
-
-    await channel.send(embed=embed)
-"""
-
-
 @tasks.loop(minutes=60)
 async def cpu_temp_task():
-    temp_raw = get_cpu_temperature()  # peut renvoyer "N/A" ou un string
+    temp_raw = get_cpu_temperature()
     try:
         temp_cpu = float(temp_raw.replace("'C", "").strip())
     except (ValueError, TypeError):
@@ -129,26 +83,32 @@ async def cpu_temp_task():
 
     status = cpu_temp_verification(temp_cpu) if temp_cpu is not None else "⚪ Inconnu"
 
+    pwm_fan_str = get_fan_pwm()
+    try:
+        value_pwm = f"`{pwm_fan_str} %`"
+    except (ValueError, TypeError):
+        value_pwm = "`N/A` — Inconnu"
+
     # Définition des titres, descriptions et couleurs selon température
     if temp_cpu is None:
         title = "❌ Température CPU inconnue"
-        desc = f"Impossible de lire la température\nÉtat : `{status}`"
+        desc = f"Impossible de lire la température\nÉtat : `{status}`\nPWM Ventilateur : `{value_pwm}`"
         color = discord.Color.red()
     elif temp_cpu < 50:
         title = "✅ Température CPU normale"
-        desc = f"Température : `{temp_cpu}°C`\nÉtat : `{status}`"
+        desc = f"Température : `{temp_cpu}°C`\nÉtat : `{status}`\nPWM Ventilateur : `{value_pwm}`"
         color = discord.Color.green()
     elif temp_cpu < 65:
         title = "🌡 Température CPU élevée"
-        desc = f"Température : `{temp_cpu}°C`\nÉtat : `{status}`"
+        desc = f"Température : `{temp_cpu}°C`\nÉtat : `{status}`\nPWM Ventilateur : `{value_pwm}`"
         color = discord.Color.yellow()
     elif temp_cpu < 75:
         title = "⚠️ Température CPU critique"
-        desc = f"Température : `{temp_cpu}°C`\nVérifiez le refroidissement."
+        desc = f"Température : `{temp_cpu}°C`\nÉtat : `{status}`\nPWM Ventilateur : `{value_pwm}`\nVérifiez le refroidissement."
         color = discord.Color.orange()
     else:
         title = "🚨 TEMPÉRATURE CRITIQUE"
-        desc = f"Température : `{temp_cpu}°C`\n**Arrêt recommandé !**"
+        desc = f"Température : `{temp_cpu}°C`\nÉtat : `{status}`\nPWM Ventilateur : `{value_pwm}`\n**Arrêt recommandé !**"
         color = discord.Color.red()
 
     # Récupération du channel via la config
