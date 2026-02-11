@@ -61,7 +61,8 @@ async def on_message(message: discord.Message):
 
     content = message.content.lower()
     corrections = {
-        "salut bot": "Salut ! Comment puis-je t'aider aujourd'hui ?",
+        "salut": "Salut ! Comment puis-je t'aider aujourd'hui ?",
+        "hi": "Hi there! How can I assist you today?",
         "aide moi": "Bien sûr ! Que puis-je faire pour toi ?",
         "merci bot": "De rien ! N'hésite pas si tu as d'autres questions.",
     }
@@ -93,7 +94,7 @@ async def cpu_temp_task():
     if temp_cpu is None:
         title = "❌ Température CPU inconnue"
         desc = f"Impossible de lire la température\nÉtat : `{status}`\nPWM Ventilateur : `{value_pwm}`"
-        color = discord.Color.red()
+        color = discord.Color.light_grey()
     elif temp_cpu < 50:
         title = "✅ Température CPU normale"
         desc = f"Température : `{temp_cpu}°C`\nÉtat : `{status}`\nPWM Ventilateur : `{value_pwm}`"
@@ -422,7 +423,8 @@ async def playlist_command(interaction: discord.Interaction, number: int):
         embed.description = t("core.playlist.not_found", number=number)
     else:
         for url in playlist:
-            audio_queue.add(url)
+            audio = get_audio_source(url)
+            audio_queue.add(audio)
         embed.description = t("core.playlist.started", number=number, count=len(playlist))
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
