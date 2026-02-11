@@ -160,16 +160,33 @@ FFMPEG_OPTIONS = {
     "options": "-vn"
 }
 
-def get_audio_source(query: str):
-    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ydl:
+def get_audio_source(query: str) -> dict:
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "quiet": True,
+        "noplaylist": True,
+        "default_search": "ytsearch"
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(query, download=False)
 
+        if not info:
+            raise ValueError("Aucun résultat trouvé pour la requête.")
+
         if "entries" in info:
+            if not info["entries"]:
+                raise ValueError("Aucun résultat trouvé pour la requête.")
             info = info["entries"][0]
 
+        if "url" not in info:
+            raise ValueError("Aucun lien audio trouvé pour la requête.")
+
         return {
-            "title": info.get("title"),
-            "url": info.get("url")
+            "title": info.get("title", "Titre inconnu"),
+            "url": info["url"],
+            "webpage_url": info.get("webpage_url"),
+            "duration": info.get("duration"),
         }
 
 
