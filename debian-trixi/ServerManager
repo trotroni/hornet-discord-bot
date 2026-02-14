@@ -1,0 +1,119 @@
+#!/bin/bash
+
+MODULE="$1"
+ACTION="$2"
+TARGET="$3"
+
+# ---------- Couleurs ----------
+GREEN="\e[32m"
+RED="\e[31m"
+BLUE="\e[34m"
+RESET="\e[0m"
+
+# ---------- Fonctions ----------
+error() {
+  echo -e "${RED}[ERREUR] $1${RESET}"
+  exit 1
+}
+
+info() {
+  echo -e "${BLUE}[INFO] $1${RESET}"
+}
+
+success() {
+  echo -e "${GREEN}[OK] $1${RESET}"
+}
+
+# ---------- Vérification ----------
+if [[ -z "$MODULE" ]]; then
+  error "Aucun module spécifié"
+fi
+
+# ---------- Services disponibles ----------
+declare -A SERVICES=(
+  [http-server]="http-server.service"
+  [nude-core-bot]="nude-core-bot.service"
+  [nude-compta-bot]="nude-compta-bot.service"
+  [hkmp]="hkmp-server.service"
+)
+
+# =====================================================
+# MODULE : SERVICE
+# =====================================================
+if [[ "$MODULE" == "service" ]]; then
+
+  if [[ -z "$ACTION" || -z "$TARGET" ]]; then
+    error "Arguments manquants"
+  fi
+
+  SERVICE="${SERVICES[$TARGET]}"
+
+  if [[ -z "$SERVICE" ]]; then
+    error "Service inconnu : $TARGET"
+  fi
+
+  case "$ACTION" in
+    enable)
+      info "Activation de $TARGET"
+      sudo systemctl enable "$SERVICE" && success "Activé"
+      ;;
+
+    disable)
+      info "Désactivation de $TARGET"
+      sudo systemctl disable "$SERVICE" && success "Désactivé"
+      ;;
+
+    start)
+      info "Démarrage de $TARGET"
+      sudo systemctl start "$SERVICE" && success "Démarré"
+      ;;
+
+    stop)
+      info "Arrêt de $TARGET"
+      sudo systemctl stop "$SERVICE" && success "Arrêté"
+      ;;
+
+    status)
+      info "Statut de $TARGET"
+      sudo systemctl status "$SERVICE" --no-pager
+      ;;
+
+    *)
+      error "Action invalide"
+      ;;
+  esac
+
+# =====================================================
+# MODULE : LOGS
+# =====================================================
+elif [[ "$MODULE" == "logs" ]]; then
+
+  if [[ -z "$ACTION" ]]; then
+    error "Tu dois préciser un service"
+  fi
+
+  SERVICE="${SERVICES[$ACTION]}"
+
+  if [[ -z "$SERVICE" ]]; then
+    error "Service inconnu : $ACTION"
+  fi
+
+  info "Logs en temps réel de $ACTION"
+  sudo journalctl -u "$SERVICE" -f
+
+# =====================================================
+# MODULE INCONNU
+# =====================================================
+else [[ "$MODULE" == "help" ]]; then
+  echo "Utilisation :"
+  echo "  ServerManager service {enable|disable|start|stop|status} {service}"
+  echo "  ServerManager logs {service}"
+  echo ""
+  echo "Services disponibles :"
+  echo "  http-server"
+  echo "  nude-core-bot"
+  echo "  nude-compta-bot"
+  echo "  hkmp"
+  exit 0
+fi
+

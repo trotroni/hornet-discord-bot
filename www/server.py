@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 import time
 from collections import defaultdict
 
-PORT = 8000
+PORT = 8080
 
 ALLOWED_IPS = ("127.", "192.168.", "10.")
 RATE_LIMIT = 60        # requêtes

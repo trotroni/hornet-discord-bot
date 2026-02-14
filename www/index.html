@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
 <h1>Dashboard Bot & Serveur</h1>
 
 <div id="status">
@@ -14,9 +15,6 @@
 
     <div>CPU Temp: <span id="cpu-temp">--</span> °C</div>
     <div>CPU: <span id="cpu-perc">--</span> %</div>
-
-    <br>
-
     <div>RAM: <span id="ram-perc">--</span> %</div>
 
     <br>
@@ -27,7 +25,6 @@
     <div>Server: <span id="bot-server">--</span></div>
 </div>
 
-
 <div id="logs-buttons">
     <button data-type="nude-core-bot">Core</button>
     <button data-type="nude-compta-bot">Compta</button>
@@ -36,15 +33,12 @@
 
 <div id="logs-container"></div>
 
-<div id="charts">
-    <canvas id="cpuChart" height="100"></canvas>
-    <canvas id="ramChart" height="100"></canvas>
-</div>
-
-<div id="barCharts">
-    <canvas id="logsBarChart" height="100"></canvas>
-    <canvas id="cpuTempChart" height="100"></canvas>
-    <canvas id="errorsBarChart" height="100"></canvas>
+<!-- GRILLE 2x2 -->
+<div id="dashboard-grid">
+    <canvas id="cpuChart"></canvas>
+    <canvas id="ramChart"></canvas>
+    <canvas id="logsBarChart"></canvas>
+    <canvas id="cpuTempChart"></canvas>
 </div>
 
 <div id="commands">
@@ -52,7 +46,7 @@
     <button onclick="refreshDashboard()">Rafraîchir</button>
 </div>
 
-<pre id="log-viewer" style="display:none;"></pre>
+<pre id="log-viewer"></pre>
 
 <script src="script.js"></script>
 </body>
