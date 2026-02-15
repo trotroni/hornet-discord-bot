@@ -77,7 +77,7 @@ HORNET_TRIGGERS = [
 # ------------------------
 
 message_count = 0
-next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
+next_trigger = randint(MIN_MESSAGES, MAX_MESSAGES)
 
 
 @bot.event
@@ -111,7 +111,7 @@ async def on_message(message: discord.Message):
 
         # Reset
         message_count = 0
-        next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
+        next_trigger = randint(MIN_MESSAGES, MAX_MESSAGES)
 
     await bot.process_commands(message)
 
@@ -549,9 +549,9 @@ async def hornet_stats(interaction: discord.Interaction):
         color=discord.Color.purple()
     )
 
-    embed.add_field(name="🎯 Nombre tiré", value=str(next_trigger), inline=False)
-    embed.add_field(name="📨 Messages comptés", value=str(message_count), inline=False)
-    embed.add_field(name="⏳ Messages restants", value=str(remaining), inline=False)
+    embed.add_field(name="Nombre tiré", value=f"`{str(next_trigger)}`", inline=False)
+    embed.add_field(name="Messages comptés", value=f"`{str(message_count)}`", inline=False)
+    embed.add_field(name="Messages restants", value=f"`{str(remaining)}`", inline=False)
 
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
