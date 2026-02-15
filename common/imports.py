@@ -8,7 +8,7 @@ import json
 import logging
 import subprocess
 import time
-from random import randint
+from random import randint, random
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from collections import defaultdict
@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 
 __all__ = [
     # stdlib
-    "os", "sys", "csv", "json", "logging", "subprocess", "time", "randint",
+    "os", "sys", "csv", "json", "logging", "subprocess", "time", "randint", "random",
     "datetime", "timedelta", "timezone", "Path", "defaultdict", "Optional",
 
     # discord core

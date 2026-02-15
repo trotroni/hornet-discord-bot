@@ -76,9 +76,9 @@ HORNET_TRIGGERS = [
 ]
 # ------------------------
 
+
 message_count = 0
 next_trigger = randint(MIN_MESSAGES, MAX_MESSAGES)
-
 
 @bot.event
 async def on_message(message: discord.Message):
@@ -89,29 +89,25 @@ async def on_message(message: discord.Message):
 
     content = message.content.lower()
 
-    # ---- 1. Réponse immédiate si Hornet est mentionnée ----
+    # Trigger direct Hornet
     if any(trigger in content for trigger in HORNET_TRIGGERS):
         reply = random.choice(HORNET_QUOTES)
         await message.channel.send(reply)
-        logger.info(
-            f"Hornet reply triggered by {message.author}: {reply}"
-        )
         return
 
-    # ---- 2. Compteur global de messages ----
+    # Compteur
     message_count += 1
+    print(f"[DEBUG] {message_count} / {next_trigger}")
 
     if message_count >= next_trigger:
         reply = random.choice(HORNET_QUOTES)
         await message.channel.send(reply)
 
-        logger.info(
-            f"Hornet random message sent after {message_count} messages: {reply}"
-        )
+        print(f"[DEBUG] TRIGGERED at {message_count}")
 
-        # Reset
         message_count = 0
-        next_trigger = randint(MIN_MESSAGES, MAX_MESSAGES)
+        next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
+        print(f"[DEBUG] New target: {next_trigger}")
 
     await bot.process_commands(message)
 
