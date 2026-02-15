@@ -535,6 +535,27 @@ async def deletelist_command(interaction: discord.Interaction, number: int, inde
     await send_with_warning(interaction, embeds=[embed])
 
 
+# /hornetstats
+@bot.tree.command(name="hornetstats")
+async def hornet_stats(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    global message_count, next_trigger
+
+    remaining = max(next_trigger - message_count, 0)
+
+    embed = discord.Embed(
+        title="Hornet Random System",
+        color=discord.Color.purple()
+    )
+
+    embed.add_field(name="🎯 Nombre tiré", value=str(next_trigger), inline=False)
+    embed.add_field(name="📨 Messages comptés", value=str(message_count), inline=False)
+    embed.add_field(name="⏳ Messages restants", value=str(remaining), inline=False)
+
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
 
 # /biere
 @bot.tree.command(name="biere", description="Teste l'alcoolémie du bot")
