@@ -53,25 +53,67 @@ t = lang_manager.translation_key
 
 load_playlists()
 
-### correction auto
+# -------- CONFIG --------
+MIN_MESSAGES = 15   # x
+MAX_MESSAGES = 40   # y
+
+HORNET_QUOTES = [
+    "SHAW!",
+    "ADINO!",
+    "HEGALE!",
+    "Git gud!",
+    "You wear the face of your father...",
+    "I will not be bound by your laws.",
+    "That crucial emptiness, I do not share."
+]
+
+HORNET_TRIGGERS = [
+    "shaw",
+    "adino",
+    "hega",
+    "git gud",
+    "hornet"
+]
+# ------------------------
+
+message_count = 0
+next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
+
+
 @bot.event
 async def on_message(message: discord.Message):
-    if message.author == bot.user:
+    global message_count, next_trigger
+
+    if message.author.bot:
         return
 
     content = message.content.lower()
-    corrections = {
-        "salut": "Salut ! Comment puis-je t'aider aujourd'hui ?",
-        "hi": "Hi there! How can I assist you today?",
-        "aide moi": "Bien sûr ! Que puis-je faire pour toi ?",
-        "merci bot": "De rien ! N'hésite pas si tu as d'autres questions.",
-    }
 
-    for trigger, response in corrections.items():
-        if trigger in content:
-            await message.channel.send(response)
-            logger.info(f"Correction automatique appliquée pour {message.author} dans le message : {message.content}")
-            break
+    # ---- 1. Réponse immédiate si Hornet est mentionnée ----
+    if any(trigger in content for trigger in HORNET_TRIGGERS):
+        reply = random.choice(HORNET_QUOTES)
+        await message.channel.send(reply)
+        logger.info(
+            f"Hornet reply triggered by {message.author}: {reply}"
+        )
+        return
+
+    # ---- 2. Compteur global de messages ----
+    message_count += 1
+
+    if message_count >= next_trigger:
+        reply = random.choice(HORNET_QUOTES)
+        await message.channel.send(reply)
+
+        logger.info(
+            f"Hornet random message sent after {message_count} messages: {reply}"
+        )
+
+        # Reset
+        message_count = 0
+        next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
+
+    await bot.process_commands(message)
 
 # -------------- TÂCHES PÉRIODIQUES --------------
 @tasks.loop(minutes=60)
