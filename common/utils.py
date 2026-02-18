@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 import yt_dlp
 from collections import deque
+import asyncio
+import time
 
 logger = logging.getLogger(__name__)
 t = lang_manager.translation_key
@@ -43,7 +45,8 @@ async def send_with_warning(
     interaction: discord.Interaction,
     embeds: list[discord.Embed],
     ephemeral: bool = True,
-    config: dict = CONFIG_GENERAL
+    config: dict = CONFIG_GENERAL,
+    view: discord.ui.View | None = None
     ):
 
     if config.get("MESSAGE", False):
@@ -53,7 +56,7 @@ async def send_with_warning(
     if config.get("MAINTENANCE", False):
         embeds.append(maintenance_embed())
 
-    await interaction.followup.send(embeds=embeds, ephemeral=ephemeral)
+    await interaction.followup.send(embeds=embeds, ephemeral=ephemeral, view=view)
 
 def travaux_embed() -> discord.Embed:
     embed_travaux = discord.Embed(
@@ -120,7 +123,7 @@ def get_cpu_temperature(config: dict = CONFIG_GENERAL):
 def cpu_temp_verification(temp_celsius) -> str:
     try:
         t = float(temp_celsius)
-    except (ValueError, TypeError):
+    except Exception:
         return "⚪ Inconnu"
 
     if t < 45:
@@ -161,14 +164,7 @@ FFMPEG_OPTIONS = {
 }
 
 def get_audio_source(query: str) -> dict:
-    ydl_opts = {
-        "format": "bestaudio/best",
-        "quiet": True,
-        "noplaylist": True,
-        "default_search": "ytsearch"
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    with yt_dlp.YoutubeDL(YTDL_OPTIONS) as ydl:
         info = ydl.extract_info(query, download=False)
 
         if not info:
@@ -187,7 +183,30 @@ def get_audio_source(query: str) -> dict:
             "url": info["url"],
             "webpage_url": info.get("webpage_url"),
             "duration": info.get("duration"),
+            "thumbnail": info.get("thumbnail"),
+            "uploader": info.get("uploader"),
+            "view_count": info.get("view_count"),
         }
+
+def format_duration(seconds: int) -> str:
+    if not seconds:
+        return "00:00"
+
+    minutes, seconds = divmod(int(seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+
+    if hours:
+        return f"{hours}:{minutes:02}:{seconds:02}"
+    return f"{minutes}:{seconds:02}"
+
+
+def progress_bar(current: int, total: int, length: int = 20):
+    if not total:
+        return "🔴 LIVE"
+
+    filled = int(length * current / total)
+    bar = "▬" * filled + "🔘" + "▬" * (length - filled)
+    return bar
 
 
 class AudioQueue:
@@ -208,9 +227,154 @@ class AudioQueue:
     def empty(self):
         return len(self.queue) == 0
 
+    def list(self):
+        return list(self.queue)
+
+    def __len__(self):
+        return len(self.queue)
+
+class MusicPlayer:
+    def __init__(self):
+        self.voice_client = None
+        self.current = None
+        self.start_time = None
+        self.paused_time = 0
+        self.is_paused = False
+        self.progress_task = None
+        self.message = None
+        self.queue = AudioQueue()
+        self.loop_track = False
+        self.loop_queue = False
+
+    async def start_progress_loop(self):
+        while self.voice_client and self.voice_client.is_playing():
+            current_time = int(time.time() - self.start_time)
+            total = self.current.get("duration")
+
+            bar = progress_bar(current_time, total)
+            duration_text = f"{format_duration(current_time)} / {format_duration(total)}"
+
+            embed = discord.Embed(
+                title="🎵 Lecture en cours",
+                description=f"**[{self.current['title']}]({self.current.get('webpage_url')})**\n\n{bar}\n`{duration_text}`",
+                color=discord.Color.green()
+            )
+
+            if self.current.get("thumbnail"):
+                embed.set_thumbnail(url=self.current["thumbnail"])
+
+            if self.current.get("uploader"):
+                embed.add_field(name="👤 Auteur", value=self.current["uploader"], inline=True)
+
+            if self.current.get("view_count"):
+                embed.add_field(name="👁 Vues", value=f"{self.current['view_count']:,}", inline=True)
+
+            embed.timestamp = date_now()
+
+            try:
+                await self.message.edit(embed=embed, view=MusicControls(self))
+            except:
+                pass
+
+            await asyncio.sleep(5)
+
+    async def play_next(self):
+        if self.loop_track and self.current:
+            song_to_play = self.current
+        else:
+            song_to_play = self.queue.next()
+            if not song_to_play:
+                if self.loop_queue:
+                    # Reset la queue
+                    self.queue.queue = deque(list(self.queue.list()))
+                    song_to_play = self.queue.next()
+                else:
+                    self.current = None
+                    return
+
+        self.current = song_to_play
+
+        source = discord.FFmpegPCMAudio(
+            self.current["url"],
+            **FFMPEG_OPTIONS
+        )
+
+        self.voice_client.play(
+            source,
+            after=lambda e: asyncio.run_coroutine_threadsafe(
+                self.play_next(), self.voice_client.loop
+            )
+        )
+
+        self.start_time = time.time()
+        if self.progress_task:
+            self.progress_task.cancel()
+        self.progress_task = asyncio.create_task(self.start_progress_loop())
+
+
+class MusicControls(discord.ui.View):
+    def __init__(self, player: MusicPlayer):
+        super().__init__(timeout=None)
+        self.player = player
+
+    @discord.ui.button(label="⏸ Pause", style=discord.ButtonStyle.gray)
+    async def pause(self, interaction: discord.Interaction):
+        if self.player.voice_client.is_playing():
+            self.player.voice_client.pause()
+            self.player.paused_time = time.time()
+            self.player.is_paused = True
+        await interaction.response.defer()
+
+    @discord.ui.button(label="▶ Resume", style=discord.ButtonStyle.green)
+    async def resume(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.player.voice_client.is_paused():
+            self.player.voice_client.resume()
+            self.player.start_time += time.time() - self.player.paused_time
+            self.player.is_paused = False
+        await interaction.response.defer()
+
+    @discord.ui.button(label="⏭ Skip", style=discord.ButtonStyle.red)
+    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.player.voice_client.stop()
+        await interaction.response.defer()
+
+    @discord.ui.button(label="🔁 Loop Track", style=discord.ButtonStyle.gray)
+    async def loop_track(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.player.loop_track = not self.player.loop_track
+        state = "activé" if self.player.loop_track else "désactivé"
+        await interaction.response.send_message(f"🔁 Loop du morceau {state}", ephemeral=ephemeral)
+
+    @discord.ui.button(label="📜 Queue", style=discord.ButtonStyle.blurple)
+    async def queue_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        queue_list = self.player.queue.list()
+
+        if not queue_list:
+            await interaction.response.send_message("Queue vide.", ephemeral=ephemeral)
+            return
+
+        description = "\n".join(
+            [f"{i+1}. {song['title']}" for i, song in enumerate(queue_list)]
+        )
+
+        embed = discord.Embed(
+            title="📜 File d'attente",
+            description=description,
+            color=discord.Color.blue()
+        )
+
+        await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
+
+    @discord.ui.button(label="🔂 Loop Queue", style=discord.ButtonStyle.blurple)
+    async def loop_queue(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.player.loop_queue = not self.player.loop_queue
+        state = "activé" if self.player.loop_queue else "désactivé"
+        await interaction.response.send_message(f"🔂 Loop de la queue {state}", ephemeral=ephemeral)
+
+
 # fichier de stockage des playlists
 PLAYLIST_FILE = Path("common/data/playlists.json")
-print(PLAYLIST_FILE)
+print(f"path playlist : {PLAYLIST_FILE}")
+
 
 # dictionnaire global des playlists
 playlists = {}  # {number: [url1, url2, ...]}

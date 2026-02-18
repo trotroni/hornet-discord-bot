@@ -10,6 +10,7 @@ guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
 START_TIME = date_now()
 load_custom_commands()
 
+voice_client: discord.VoiceClient | None = None
 
 @bot.event
 async def on_ready():
@@ -29,7 +30,7 @@ async def on_ready():
     channel = bot.get_channel(1417564003760082978)
 
     if channel is None:
-        print("❌ Channel général introuvable")
+        logger.debug("❌ Channel général introuvable")
         return
 
     embed = discord.Embed(
@@ -97,17 +98,17 @@ async def on_message(message: discord.Message):
 
     # Compteur
     message_count += 1
-    print(f"[DEBUG] {message_count} / {next_trigger}")
+    logger.debug(f"[DEBUG] {message_count} / {next_trigger}")
 
     if message_count >= next_trigger:
         reply = random.choice(HORNET_QUOTES)
         await message.channel.send(reply)
 
-        print(f"[DEBUG] TRIGGERED at {message_count}")
+        logger.debug(f"[DEBUG] TRIGGERED at {message_count}")
 
         message_count = 0
         next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
-        print(f"[DEBUG] New target: {next_trigger}")
+        logger.debug(f"[DEBUG] New target: {next_trigger}")
 
     await bot.process_commands(message)
 
@@ -192,64 +193,84 @@ async def _play_next(interaction: discord.Interaction):
 
     def after_playing(error):
         if error:
-            print(error)
+            logger.debug(error)
         # relancer la lecture
         bot.loop.create_task(_play_next(interaction))
 
     voice_client.play(source, after=after_playing)
 
 # ---------------- PLAY ----------------
+player = MusicPlayer()  # instance globale
+
 @bot.tree.command(name="play", description="Lit une musique depuis YouTube")
 @app_commands.describe(query="Titre ou lien YouTube")
 async def play_command(interaction: discord.Interaction, query: str):
-    global voice_client
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    global player
 
-    # Vérification que l'utilisateur est dans un salon vocal
-    if interaction.user.voice is None or interaction.user.voice.channel is None:
-        embed = discord.Embed(
-            title=t("core.play.title"),
-            description=t("core.play.voice_required"),
-            color=discord.Color.red()
+    await interaction.response.defer()
+
+    # Vérification salon vocal
+    if not interaction.user.voice or not interaction.user.voice.channel:
+        await interaction.followup.send(
+            "❌ Tu dois être connecté à un salon vocal.",
+            ephemeral=True
         )
-        embed.timestamp = date_now()
-        await send_with_warning(interaction, embeds=[embed])
         return
 
     channel = interaction.user.voice.channel
 
-    # Connexion au salon si nécessaire
-    if voice_client is None or not voice_client.is_connected():
-        voice_client = await channel.connect()
+    # Connexion si nécessaire
+    if not player.voice_client or not player.voice_client.is_connected():
+        player.voice_client = await channel.connect()
 
-    # Récupération de la source audio
+    # Récupération musique
     try:
         audio = get_audio_source(query)
     except ValueError as e:
-        embed = discord.Embed(
-            title=t("core.play.title"),
-            description=str(e),
-            color=discord.Color.red()
-        )
-        embed.timestamp = date_now()
-        await send_with_warning(interaction, embeds=[embed])
+        await interaction.followup.send(str(e), ephemeral=True)
         return
 
-    audio_queue.add(audio)
+    # Ajout à la queue
+    player.queue.add(audio)
 
-    # Jouer immédiatement si rien n'est en cours
-    if not voice_client.is_playing():
-        await _play_next(interaction)
+    # Si rien ne joue → démarrer
+    if not player.voice_client.is_playing():
+        await player.play_next()
 
+    # Embed initial
     embed = discord.Embed(
-        title=t("core.play.title"),
-        description=t("core.play.now_playing", title=audio.get("title", "Inconnu")),
-        color=discord.Color.green()
+        title="🎵 Ajouté à la queue",
+        description=f"**[{audio['title']}]({audio.get('webpage_url')})**",
+        color=discord.Color.blue()
     )
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
 
+    if audio.get("thumbnail"):
+        embed.set_thumbnail(url=audio["thumbnail"])
+
+    embed.add_field(
+        name="⏱ Durée",
+        value=format_duration(audio.get("duration")),
+        inline=True
+    )
+
+    if audio.get("uploader"):
+        embed.add_field(
+            name="👤 Auteur",
+            value=audio["uploader"],
+            inline=True
+        )
+
+    embed.timestamp = date_now()
+
+    # Envoi du message player
+    play.message = await send_with_warning(
+        interaction,
+        embeds=[embed],
+        view=MusicControls(player)
+    )
+
+    # Stocker le message pour updates live
+    player.message = play.message
 # ---------------- STOP ----------------
 @bot.tree.command(name="stop", description="Arrête la lecture et déconnecte le bot")
 async def stop_command(interaction: discord.Interaction):
@@ -532,22 +553,30 @@ async def deletelist_command(interaction: discord.Interaction, number: int, inde
 
 
 # /hornetstats
-@bot.tree.command(name="hornetstats")
+@bot.tree.command(name="hornetstats", description="Affiche les stats du système de random Hornet")
 async def hornet_stats(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
     global message_count, next_trigger
-
-    remaining = max(next_trigger - message_count, 0)
 
     embed = discord.Embed(
         title="Hornet Random System",
         color=discord.Color.purple()
     )
 
-    embed.add_field(name="Nombre tiré", value=f"`{str(next_trigger)}`", inline=False)
-    embed.add_field(name="Messages comptés", value=f"`{str(message_count)}`", inline=False)
-    embed.add_field(name="Messages restants", value=f"`{str(remaining)}`", inline=False)
+    embed.add_field(name="Messages comptés", value=f"`{str(message_count)}`/`{str(next_trigger)}`", inline=False)
+
+    embed.add_field(
+        name="Répliques",
+        value="\n".join(f"• {quote}" for quote in HORNET_QUOTES),
+        inline=False
+    )
+
+    embed.add_field(
+        name="Déclencheurs",
+        value=", ".join(HORNET_TRIGGERS),
+        inline=False
+    )
 
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
