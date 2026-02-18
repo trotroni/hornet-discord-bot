@@ -326,7 +326,7 @@ class MusicControls(discord.ui.View):
         await interaction.response.defer()
 
     @discord.ui.button(label="▶ Resume", style=discord.ButtonStyle.green)
-    async def resume(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def resume(self, interaction: discord.Interaction):
         if self.player.voice_client.is_paused():
             self.player.voice_client.resume()
             self.player.start_time += time.time() - self.player.paused_time
@@ -334,18 +334,18 @@ class MusicControls(discord.ui.View):
         await interaction.response.defer()
 
     @discord.ui.button(label="⏭ Skip", style=discord.ButtonStyle.red)
-    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def skip(self, interaction: discord.Interaction):
         self.player.voice_client.stop()
         await interaction.response.defer()
 
     @discord.ui.button(label="🔁 Loop Track", style=discord.ButtonStyle.gray)
-    async def loop_track(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def loop_track(self, interaction: discord.Interaction):
         self.player.loop_track = not self.player.loop_track
         state = "activé" if self.player.loop_track else "désactivé"
         await interaction.response.send_message(f"🔁 Loop du morceau {state}", ephemeral=ephemeral)
 
     @discord.ui.button(label="📜 Queue", style=discord.ButtonStyle.blurple)
-    async def queue_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def queue_button(self, interaction: discord.Interaction):
         queue_list = self.player.queue.list()
 
         if not queue_list:
@@ -365,7 +365,7 @@ class MusicControls(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @discord.ui.button(label="🔂 Loop Queue", style=discord.ButtonStyle.blurple)
-    async def loop_queue(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def loop_queue(self, interaction: discord.Interaction):
         self.player.loop_queue = not self.player.loop_queue
         state = "activé" if self.player.loop_queue else "désactivé"
         await interaction.response.send_message(f"🔂 Loop de la queue {state}", ephemeral=ephemeral)
