@@ -8,7 +8,8 @@ import json
 import logging
 import subprocess
 import time
-from random import randint, random
+import random
+from random import randint
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from collections import defaultdict
