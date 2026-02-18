@@ -372,8 +372,8 @@ class MusicControls(discord.ui.View):
 
 
 # fichier de stockage des playlists
-PLAYLIST_FILE = Path("common/data/playlists.json")
-print(f"path playlist : {PLAYLIST_FILE}")
+PLAYLIST_FILE = Path("/home/trotroni/nude-discord-bot/common/data/playlists.json")
+logger.info(f"path playlist : {PLAYLIST_FILE}")
 
 
 # dictionnaire global des playlists
@@ -386,7 +386,7 @@ def save_playlists():
             json.dump(playlists, f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
-        print(f"❌ Erreur sauvegarde playlists : {e}")
+        logger.error(f"❌ Erreur sauvegarde playlists : {e}")
         return False
 
 def load_playlists():
@@ -397,5 +397,5 @@ def load_playlists():
             with PLAYLIST_FILE.open("r", encoding="utf-8") as f:
                 playlists = json.load(f)
         except Exception as e:
-            print(f"❌ Erreur lecture playlists : {e}")
+            logger.error(f"❌ Erreur lecture playlists : {e}")
             playlists = {}
