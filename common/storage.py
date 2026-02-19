@@ -1,4 +1,5 @@
-# storage.py
+# common/storage.py
+
 import json
 import os
 

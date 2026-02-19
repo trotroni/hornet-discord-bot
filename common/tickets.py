@@ -1,4 +1,5 @@
-# tickets.py
+# common/tickets.py
+
 from common.storage import load_json, save_json, log_event
 from common.utils_compta import now_iso
 
