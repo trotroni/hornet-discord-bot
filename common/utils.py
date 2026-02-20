@@ -1,10 +1,8 @@
 # common/utils.py
-
 from common.config import CONFIG_CORE, CONFIG_GENERAL
 from datetime import datetime, timezone
 from common.langManager import lang_manager
 import discord
-from discord.ui import Button
 import logging
 import subprocess
 import json
@@ -58,7 +56,7 @@ async def send_with_warning(
     if config.get("MAINTENANCE", False):
         embeds.append(maintenance_embed())
 
-    await interaction.followup.send(embeds=embeds, ephemeral=get_ephemeral, view=view)
+    await interaction.followup.send(embeds=embeds, ephemeral=ephemeral, view=view)
 
 def travaux_embed() -> discord.Embed:
     embed_travaux = discord.Embed(
@@ -316,19 +314,19 @@ class MusicPlayer:
 
 class MusicControls(discord.ui.View):
     def __init__(self, player: MusicPlayer):
-        super().__init__(timeout=999)
+        super().__init__(timeout=None)
         self.player = player
 
-    @discord.ui.button(label="⏸ Pause", style=discord.ButtonStyle.secondary)
-    async def pause(self, interaction: discord.Interaction, button: Button):
-        if self.player.voice_client and self.player.voice_client.is_playing():
+    @discord.ui.button(label="⏸ Pause", style=discord.ButtonStyle.gray)
+    async def pause(self, interaction: discord.Interaction):
+        if self.player.voice_client.is_playing():
             self.player.voice_client.pause()
             self.player.paused_time = time.time()
             self.player.is_paused = True
         await interaction.response.defer()
 
     @discord.ui.button(label="▶ Resume", style=discord.ButtonStyle.green)
-    async def resume(self, interaction: discord.Interaction, button: Button):
+    async def resume(self, interaction: discord.Interaction):
         if self.player.voice_client.is_paused():
             self.player.voice_client.resume()
             self.player.start_time += time.time() - self.player.paused_time
@@ -336,22 +334,22 @@ class MusicControls(discord.ui.View):
         await interaction.response.defer()
 
     @discord.ui.button(label="⏭ Skip", style=discord.ButtonStyle.red)
-    async def skip(self, interaction: discord.Interaction, button: Button):
+    async def skip(self, interaction: discord.Interaction):
         self.player.voice_client.stop()
         await interaction.response.defer()
 
     @discord.ui.button(label="🔁 Loop Track", style=discord.ButtonStyle.gray)
-    async def loop_track(self, interaction: discord.Interaction, button: Button):
+    async def loop_track(self, interaction: discord.Interaction):
         self.player.loop_track = not self.player.loop_track
         state = "activé" if self.player.loop_track else "désactivé"
-        await interaction.response.send_message(f"🔁 Loop du morceau {state}", ephemeral=get_ephemeral)
+        await interaction.response.send_message(f"🔁 Loop du morceau {state}", ephemeral=ephemeral)
 
     @discord.ui.button(label="📜 Queue", style=discord.ButtonStyle.blurple)
-    async def queue_button(self, interaction: discord.Interaction, button: Button):
+    async def queue_button(self, interaction: discord.Interaction):
         queue_list = self.player.queue.list()
 
         if not queue_list:
-            await interaction.response.send_message("Queue vide.", ephemeral=get_ephemeral)
+            await interaction.response.send_message("Queue vide.", ephemeral=ephemeral)
             return
 
         description = "\n".join(
@@ -364,40 +362,14 @@ class MusicControls(discord.ui.View):
             color=discord.Color.blue()
         )
 
-        await interaction.response.send_message(embed=embed, ephemeral=get_ephemeral)
+        await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
     @discord.ui.button(label="🔂 Loop Queue", style=discord.ButtonStyle.blurple)
-    async def loop_queue(self, interaction: discord.Interaction, button: Button):
+    async def loop_queue(self, interaction: discord.Interaction):
         self.player.loop_queue = not self.player.loop_queue
         state = "activé" if self.player.loop_queue else "désactivé"
-        await interaction.response.send_message(f"🔂 Loop de la queue {state}", ephemeral=get_ephemeral)
+        await interaction.response.send_message(f"🔂 Loop de la queue {state}", ephemeral=ephemeral)
 
-    @discord.ui.button(label="⬜️ Quit", style=discord.ButtonStyle.red)
-    async def quit(self, interaction: discord.Interaction, _: discord.ui.Button):
-
-        vc = self.player.voice_client
-
-        if not vc:
-            await interaction.response.defer()
-            return
-
-        if vc.is_playing() or vc.is_paused():
-            vc.stop()
-
-        await vc.disconnect()
-
-        # Reset propre du player
-        self.player.queue.clear()
-        self.player.current = None
-        self.player.voice_client = None
-
-        # Désactive les boutons
-        for item in self.children:
-            item.disabled = True
-
-        await interaction.response.edit_message(view=self)
-
-    # add shffle
 
 # fichier de stockage des playlists
 PLAYLIST_FILE = Path("/home/trotroni/nude-discord-bot/common/data/playlists.json")
