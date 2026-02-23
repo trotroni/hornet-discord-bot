@@ -182,6 +182,103 @@ async def before_cpu_task():
 
 # ---------------- COMMANDES SLASH ----------------
 
+CONFIG_PATH = "/etc/fan/fan.conf"
+
+
+def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
+    lines = []
+    lines.append("debug=false\n\n")
+    lines.append("Main:\n")
+
+    for i in range(steps + 1):
+        T = temp_min + (temp_max - temp_min) * i / steps
+        x = (T - temp_min) / (temp_max - temp_min)
+        pwm = pwm_min + (pwm_max - pwm_min) * (math.exp(k*x) - 1) / (math.exp(k) - 1)
+        lines.append(f"    {round(T,1)}={round(pwm)}\n")
+
+    lines.append("\nDebug:\n")
+    lines.append("    1=100\n")
+
+    return "".join(lines)
+
+
+def write_config(content: str):
+    with open(CONFIG_PATH, "w") as f:
+        f.write(content)
+
+
+class FanConfirmView(View):
+    def __init__(self, config_content):
+        super().__init__(timeout=60)
+        self.config_content = config_content
+        self.applied = False
+
+    @discord.ui.button(label="Confirmer ✅", style=discord.ButtonStyle.green)
+    async def confirm(self, interaction: discord.Interaction, button: Button):
+        write_config(self.config_content)
+        self.applied = True
+        await interaction.response.edit_message(content="✅ Configuration appliquée !", embed=None, view=None)
+        self.stop()
+
+    @discord.ui.button(label="Annuler ❌", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.edit_message(content="❌ Configuration annulée.", embed=None, view=None)
+        self.stop()
+
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def fanconfig(ctx, temp_min: float, temp_max: float, pwm_min: int, pwm_max: int):
+    try:
+        if temp_min >= temp_max:
+            await ctx.send("❌ temp_min doit être inférieur à temp_max")
+            return
+        if pwm_min >= pwm_max:
+            await ctx.send("❌ pwm_min doit être inférieur à pwm_max")
+            return
+        if not (0 <= pwm_min <= 100 and 0 <= pwm_max <= 100):
+            await ctx.send("❌ PWM doit être entre 0 et 100")
+            return
+
+        config_content = generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max)
+
+        # Embed preview
+        embed = discord.Embed(
+            title="⚙️ Prévisualisation configuration ventilateur",
+            description=f"```{config_content}```",
+            color=discord.Color.blue()
+        )
+        view = FanConfirmView(config_content)
+        await ctx.send(embed=embed, view=view)
+
+    except Exception as e:
+        await ctx.send(f"❌ Erreur : {e}")
+
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def fanpanic(ctx):
+    try:
+        content = (
+            "debug=true\n\n"
+            "Main:\n"
+            "    1=100\n\n"
+            "Debug:\n"
+            "    1=100\n"
+        )
+
+        # Embed preview
+        embed = discord.Embed(
+            title="🚨 Mode PANIC ventilateur",
+            description=f"```{content}```",
+            color=discord.Color.red()
+        )
+        view = FanConfirmView(content)
+        await ctx.send(embed=embed, view=view)
+
+    except Exception as e:
+        await ctx.send(f"❌ Erreur : {e}")
+
 # ---------------- Lecture suivante interne ----------------
 async def _play_next(interaction: discord.Interaction):
     global voice_client
