@@ -6,7 +6,7 @@ import os
 import discord
 from discord.ui import View, Button
 
-DATA_DIR = "../nude-compta-bot/data"
+DATA_DIR = "../compta-bot/data"
 
 def now_iso():
     return datetime.utcnow().isoformat()

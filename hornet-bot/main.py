@@ -49,6 +49,13 @@ async def on_ready():
     else:
         logger.warning("⚠️ Task CPU déjà en cours")
 
+    # démarrage task hornet
+    if not hornet_task.is_running():
+        hornet_task.start()
+        logger.info("🐝 Task Hornet démarrée")
+    else:
+        logger.warning("⚠️ Task Hornet déjà en cours")
+
 # config translation
 t = lang_manager.translation_key
 
@@ -113,6 +120,14 @@ async def on_message(message: discord.Message):
     await bot.process_commands(message)
 
 # -------------- TÂCHES PÉRIODIQUES --------------
+@tasks.loop(minutes=30)
+async def hornet_status_task():
+    # Choisit une citation aléatoire
+    status_message = random.choice(HORNET_QUOTES)
+    # Change le status du bot
+    await bot.change_presence(activity=discord.Game(name=status_message))
+
+
 @tasks.loop(minutes=60)
 async def cpu_temp_task():
     temp_raw = get_cpu_temperature()
@@ -178,6 +193,10 @@ async def cpu_temp_task():
 # --- AVANT LE LANCEMENT DU TASK ---
 @cpu_temp_task.before_loop
 async def before_cpu_task():
+    await bot.wait_until_ready()
+
+@cpu_temp_task.before_loop
+async def before_hornet_task():
     await bot.wait_until_ready()
 
 # ---------------- COMMANDES SLASH ----------------

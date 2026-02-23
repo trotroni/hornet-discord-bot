@@ -3,7 +3,7 @@
 import json
 import os
 
-DATA_DIR = "../nude-compta-bot/data"
+DATA_DIR = "../compta-bot/data"
 
 def _path(filename):
     return os.path.join(DATA_DIR, filename)

@@ -56,7 +56,7 @@ async def send_with_warning(
     if config.get("MAINTENANCE", False):
         embeds.append(maintenance_embed())
 
-    await interaction.followup.send(embeds=embeds, ephemeral=ephemeral, view=view)
+    await interaction.followup.send(embeds=embeds, ephemeral=ephemeral)
 
 def travaux_embed() -> discord.Embed:
     embed_travaux = discord.Embed(
