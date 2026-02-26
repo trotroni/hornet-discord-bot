@@ -15,25 +15,11 @@ import time
 logger = logging.getLogger(__name__)
 t = lang_manager.translation_key
 
-custom_commands = {}
+def load_reactions():
+    with open("reactions.json", "r", encoding="utf-8") as f:
+        return json.load(f)
 
-CUSTOM_COMMANDS_FILE = Path("custom_commands.json")
-
-def load_custom_commands():
-    global custom_commands
-    if CUSTOM_COMMANDS_FILE.exists():
-        with open(CUSTOM_COMMANDS_FILE, "r", encoding="utf-8") as f:
-            custom_commands = json.load(f)
-    else:
-        custom_commands = {}
-
-def save_custom_commands():
-    try:
-        with open(CUSTOM_COMMANDS_FILE, "w", encoding="utf-8") as f:
-            json.dump(custom_commands, f, ensure_ascii=False, indent=2)
-        return True
-    except Exception:
-        return False
+REACTION_TOPICS = load_reactions()
 
 def date_now():
     return datetime.now(timezone.utc)
@@ -45,10 +31,9 @@ async def send_with_warning(
     interaction: discord.Interaction,
     embeds: list[discord.Embed],
     ephemeral: bool = True,
-    config: dict = CONFIG_GENERAL,
-    view: discord.ui.View | None = None
+    config: dict = CONFIG_GENERAL
     ):
-
+    print("fonction appelée")
     if config.get("MESSAGE", False):
         embeds.append(message_embed())
     if config.get("TRAVAUX", False):

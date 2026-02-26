@@ -1,4 +1,4 @@
-# nude-core-bot/main.py
+# hornet-bot/main.py
 from common.imports import *
 from common.init import *
 from common.langManager import lang_manager
@@ -50,8 +50,8 @@ async def on_ready():
         logger.warning("⚠️ Task CPU déjà en cours")
 
     # démarrage task hornet
-    if not hornet_task.is_running():
-        hornet_task.start()
+    if not hornet_status_task.is_running():
+        hornet_status_task.start()
         logger.info("🐝 Task Hornet démarrée")
     else:
         logger.warning("⚠️ Task Hornet déjà en cours")
@@ -66,9 +66,9 @@ MIN_MESSAGES = 15   # x
 MAX_MESSAGES = 40   # y
 
 HORNET_QUOTES = [
-    "SHAW!",
-    "ADINO!",
-    "HEGALE!",
+    "SHAW !",
+    "ADINO !",
+    "HEGALE !",
     "Git gud!",
     "You wear the face of your father...",
     "I will not be bound by your laws.",
@@ -78,8 +78,10 @@ HORNET_QUOTES = [
 HORNET_TRIGGERS = [
     "shaw",
     "adino",
-    "hega",
+    "hegale",
+    "hega"
     "git gud",
+    "gitgut"
     "hornet"
 ]
 # ------------------------
@@ -88,6 +90,7 @@ HORNET_TRIGGERS = [
 message_count = 0
 next_trigger = randint(MIN_MESSAGES, MAX_MESSAGES)
 
+"""
 @bot.event
 async def on_message(message: discord.Message):
     global message_count, next_trigger
@@ -116,6 +119,69 @@ async def on_message(message: discord.Message):
         message_count = 0
         next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
         logger.debug(f"[DEBUG] New target: {next_trigger}")
+
+    await bot.process_commands(message)
+"""
+
+@bot.event
+async def on_message(message: discord.Message):
+    global message_count, next_trigger
+
+    if message.author.bot:
+        return
+
+    content = message.content.lower()
+
+    # =========================
+    # PARCOURS DES SUJETS
+    # =========================
+    for topic_name, topic_data in REACTION_TOPICS.items():
+
+        keywords = topic_data.get("keywords", [])
+        responses = topic_data.get("responses", [])
+
+        # Trigger direct par mot-clé
+        if any(keyword in content for keyword in keywords):
+
+            if responses:
+                reply = random.choice(responses)
+
+                if reply["type"] == "text":
+                    await message.channel.send(reply["content"])
+
+                elif reply["type"] == "gif":
+                    embed = discord.Embed()
+                    embed.set_image(url=reply["content"])
+                    await message.channel.send(embed=embed)
+
+            return
+
+    # =========================
+    # RANDOM INTERVAL (ex-Hornet)
+    # =========================
+
+    hornet = REACTION_TOPICS.get("hornet")
+
+    if hornet and hornet.get("random_interval"):
+
+        message_count += 1
+
+        if message_count >= next_trigger:
+            responses = hornet.get("responses", [])
+
+            if responses:
+                reply = random.choice(responses)
+
+                if reply["type"] == "text":
+                    await message.channel.send(reply["content"])
+
+                elif reply["type"] == "gif":
+                    embed = discord.Embed()
+                    embed.set_image(url=reply["content"])
+                    await message.channel.send(embed=embed)
+
+            message_count = 0
+            next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
 
     await bot.process_commands(message)
 
@@ -203,7 +269,6 @@ async def before_hornet_task():
 
 CONFIG_PATH = "/etc/fan/fan.conf"
 
-
 def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
     lines = []
     lines.append("debug=false\n\n")
@@ -245,7 +310,7 @@ class FanConfirmView(View):
         self.stop()
 
 
-@bot.command()
+@bot.tree.command(name="fanconfig", description="Génère une configuration de ventilateur personnalisée")
 @commands.has_permissions(administrator=True)
 async def fanconfig(ctx, temp_min: float, temp_max: float, pwm_min: int, pwm_max: int):
     try:
@@ -274,7 +339,7 @@ async def fanconfig(ctx, temp_min: float, temp_max: float, pwm_min: int, pwm_max
         await ctx.send(f"❌ Erreur : {e}")
 
 
-@bot.command()
+@bot.tree.command(name="fanpanic", description="Applique une configuration de ventilateur en mode PANIC (100% dès 1°C)")
 @commands.has_permissions(administrator=True)
 async def fanpanic(ctx):
     try:
@@ -504,6 +569,8 @@ async def deletelist_command(interaction: discord.Interaction, number: int, inde
 
 """
 
+# secours pour stats
+"""
 # /hornetstats
 @bot.tree.command(name="hornetstats", description="Affiche les stats du système de random Hornet")
 async def hornet_stats(interaction: discord.Interaction):
@@ -533,44 +600,9 @@ async def hornet_stats(interaction: discord.Interaction):
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
-
-# /biere
-@bot.tree.command(name="biere", description="Teste l'alcoolémie du bot")
-async def biere(interaction: discord.Interaction):
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
-
-    a = randint(1, 7)
-    if a == 1:
-        embed = discord.Embed(title=t("core.biere.response1"), color=discord.Color.pink())
-    elif a == 2:
-        embed = discord.Embed(title=t("core.biere.response2"), color=discord.Color.pink())
-    elif a == 3:
-        embed = discord.Embed(title=t("core.biere.response3"), color=discord.Color.pink())
-    elif a == 4:
-        embed = discord.Embed(title=t("core.biere.response4"), color=discord.Color.pink())
-    elif a == 5:
-        embed = discord.Embed(title=t("core.biere.response5"), color=discord.Color.pink())
-    elif a == 6:
-        embed = discord.Embed(title=t("core.biere.response6"), color=discord.Color.pink())
-    elif a == 7:
-        embed = discord.Embed(title=t("core.biere.response7"), color=discord.Color.pink())
-
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
-
-# /ping
-@bot.tree.command(name="ping", description="Teste l'alcoolémie du bot")
-async def ping(interaction: discord.Interaction):
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
-    embed = discord.Embed(title=t("core.ping.response"), color=discord.Color.pink())
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
-
 # /stat
 @bot.tree.command(name="stat", description="Stat sur le bot")
-async def info(interaction: discord.Interaction):
+async def botstat(interaction: discord.Interaction):
     command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
 
@@ -636,6 +668,173 @@ async def info(interaction: discord.Interaction):
     embed.timestamp = date_now()
 
     await send_with_warning(interaction, embeds=[embed])
+"""
+
+@bot.tree.command(name="stat", description="Statistiques du bot ou du système Hornet")
+@app_commands.describe(module="Choisir le module à afficher")
+@app_commands.choices(module=[
+    app_commands.Choice(name="bot", value="bot"),
+    app_commands.Choice(name="hornet", value="hornet")
+])
+async def stat(interaction: discord.Interaction, module: app_commands.Choice[str]):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    global message_count, next_trigger
+
+    # =========================
+    # SECTION HORNET
+    # =========================
+    if module.value == "hornet":
+
+        embed = discord.Embed(
+            title="Hornet Random System",
+            color=discord.Color.purple()
+        )
+
+        embed.add_field(
+            name="Messages comptés",
+            value=f"`{message_count}`/`{next_trigger}`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="Répliques",
+            value="\n".join(f"• {quote}" for quote in HORNET_QUOTES),
+            inline=False
+        )
+
+        embed.add_field(
+            name="Déclencheurs",
+            value=", ".join(HORNET_TRIGGERS),
+            inline=False
+        )
+
+        embed.timestamp = date_now()
+        print("avant send_with_warning")
+        await send_with_warning(interaction, embeds=[embed])
+        print("après send_with_warning")
+        return
+
+    # =========================
+    # SECTION BOT
+    # =========================
+    if module.value == "bot":
+
+        guild = interaction.guild
+        if guild is None:
+            users_list_chunks = ["Commande utilisable uniquement dans un serveur"]
+        else:
+            members = sorted([member.mention for member in guild.members])
+            users_list_chunks = []
+            chunk = ""
+            for m in members:
+                if len(chunk) + len(m) + 2 > 1000:
+                    users_list_chunks.append(chunk.rstrip(", "))
+                    chunk = ""
+                chunk += m + ", "
+            if chunk:
+                users_list_chunks.append(chunk.rstrip(", "))
+
+        servers_list = ", ".join(f"`{g.name}`" for g in bot.guilds)
+        servers_count = len(bot.guilds)
+
+        version = CONFIG["VERSION"]
+        delta = date_now() - START_TIME
+        days = delta.days
+        hours, remainder = divmod(delta.seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+        uptime_str = f"{days}j {hours}h {minutes}m"
+
+        embed = discord.Embed(
+            title=t("core.stat.title"),
+            color=discord.Color.pink()
+        )
+
+        for chunk in users_list_chunks:
+            embed.add_field(
+                name=t("core.stat.members", member_count=interaction.guild.member_count),
+                value=chunk,
+                inline=False
+            )
+
+        embed.add_field(
+            name=t("core.stat.servers", servers_count=servers_count),
+            value=servers_list,
+            inline=False
+        )
+
+        embed.add_field(
+            name=t("core.stat.version"),
+            value=f"`{version}`",
+            inline=True
+        )
+
+        embed.add_field(
+            name=t("core.stat.uptime"),
+            value=f"`{uptime_str}`",
+            inline=True
+        )
+
+        cpu_temp_str = get_cpu_temperature()
+        try:
+            cpu_temp = float(cpu_temp_str.replace("'C", ""))
+            status = cpu_temp_verification(cpu_temp)
+            value = f"`{cpu_temp:.1f}°C` — `{status}`"
+        except (ValueError, TypeError):
+            value = "`N/A` — ⚪ Inconnu"
+
+        embed.add_field(
+            name=t("core.stat.cpu_temp"),
+            value=value,
+            inline=True
+        )
+
+        pwm_fan_str = get_fan_pwm()
+        embed.add_field(
+            name=t("core.stat.fan_pwm"),
+            value=f"`{pwm_fan_str} %`",
+            inline=True
+        )
+
+        embed.timestamp = date_now()
+        print("avant send_with_warning")
+        await send_with_warning(interaction, embeds=[embed])
+        print("après send_with_warning")
+
+# /biere
+@bot.tree.command(name="biere", description="Teste l'alcoolémie du bot")
+async def biere(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+
+    a = randint(1, 7)
+    if a == 1:
+        embed = discord.Embed(title=t("core.biere.response1"), color=discord.Color.pink())
+    elif a == 2:
+        embed = discord.Embed(title=t("core.biere.response2"), color=discord.Color.pink())
+    elif a == 3:
+        embed = discord.Embed(title=t("core.biere.response3"), color=discord.Color.pink())
+    elif a == 4:
+        embed = discord.Embed(title=t("core.biere.response4"), color=discord.Color.pink())
+    elif a == 5:
+        embed = discord.Embed(title=t("core.biere.response5"), color=discord.Color.pink())
+    elif a == 6:
+        embed = discord.Embed(title=t("core.biere.response6"), color=discord.Color.pink())
+    elif a == 7:
+        embed = discord.Embed(title=t("core.biere.response7"), color=discord.Color.pink())
+
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
+
+# /ping
+@bot.tree.command(name="ping", description="Teste l'alcoolémie du bot")
+async def ping(interaction: discord.Interaction):
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    embed = discord.Embed(title=t("core.ping.response"), color=discord.Color.pink())
+    embed.timestamp = date_now()
+    await send_with_warning(interaction, embeds=[embed])
 
 # /language
 @bot.tree.command(name="language", description="Change la langue du bot")
@@ -668,6 +867,41 @@ async def language_command(interaction: discord.Interaction, lang: str = None):
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
 
+@bot.tree.command(name="addkeyword", description="Ajoute un mot-clé à un sujet de réaction")
+@commands.has_permissions(administrator=True)
+async def addkeyword(ctx, topic: str, *, keyword: str):
+
+    topic = topic.lower()
+
+    if topic not in REACTION_TOPICS:
+        await ctx.send(f"❌ Sujet `{topic}` introuvable.")
+        return
+
+    REACTION_TOPICS[topic]["keywords"].append(keyword.lower())
+
+    await ctx.send(f"✅ Mot-clé `{keyword}` ajouté au sujet `{topic}`.")
+
+@bot.tree.command(name="addresponse", description="Ajoute une réponse à un sujet de réaction")
+@commands.has_permissions(administrator=True)
+async def addresponse(ctx, topic: str, rtype: str, *, content: str):
+
+    topic = topic.lower()
+    rtype = rtype.lower()
+
+    if topic not in REACTION_TOPICS:
+        await ctx.send("❌ Sujet introuvable.")
+        return
+
+    if rtype not in ["text", "gif"]:
+        await ctx.send("❌ Type invalide (text/gif).")
+        return
+
+    REACTION_TOPICS[topic]["responses"].append({
+        "type": rtype,
+        "content": content
+    })
+
+    await ctx.send(f"✅ Réponse ajoutée au sujet `{topic}`.")
 
 if __name__ == "__main__":
     bot.run(CONFIG["TOKEN"])

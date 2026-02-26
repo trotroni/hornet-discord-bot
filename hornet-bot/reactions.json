@@ -1,0 +1,26 @@
+{
+  "hornet": {
+    "keywords": ["shaw", "adino", "hegale", "hega", "git gud", "gitgut", "hornet"],
+    "responses": [
+      {"type": "text", "content": "SHAW !"},
+      {"type": "text", "content": "ADINO !"},
+      {"type": "text", "content": "HEGALE !"},
+      {"type": "text", "content": "Git gud!"}
+    ],
+    "random_interval": true
+  },
+  "minecraft": {
+    "keywords": ["creeper", "minecraft"],
+    "responses": [
+      {"type": "gif", "content": "https://media.giphy.com/media/l0HlPjezGYZK6QkFq/giphy.gif"}
+    ],
+    "random_interval": false
+  },
+  "zzz": {
+    "keywords": ["zenless", "zzz"],
+    "responses": [
+      {"type": "text", "content": "Proxy detected ⚡"}
+    ],
+    "random_interval": false
+  }
+}

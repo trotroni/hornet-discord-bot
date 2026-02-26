@@ -1,9 +1,3 @@
-/0/ajouter channel_log comme command_log pour logger pour le bot compta dans le channel pour avoir une trace
-
-/0/résoudre les boutons sous les embeds
-
 /0/add 'EPHEMERAL_ERROR' -> c'est a dire les renvoie d'erreurs des commandes en message éphémère
 
-/0/compta : changer les ephemeral
-
-Commande create ne crée rien et je veux que dans les logs on mette le nom de la commande créée
+/0/crée playlist en récupérant des playlists YouTube/spotify/deezer

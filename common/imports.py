@@ -9,7 +9,7 @@ import logging
 import subprocess
 import time
 import random
-import maths
+import math
 from random import randint
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,6 +25,7 @@ from discord import (
     AllowedMentions,
     app_commands,
 )
+from discord.ui import View, Button
 
 # --- dotenv ---
 from dotenv import load_dotenv
@@ -32,13 +33,13 @@ from dotenv import load_dotenv
 __all__ = [
     # stdlib
     "os", "sys", "csv", "json", "logging", "subprocess", "time", "randint", "random",
-    "maths", "datetime", "timedelta", "timezone", "Path", "defaultdict", "Optional",
+    "math", "datetime", "timedelta", "timezone", "Path", "defaultdict", "Optional",
 
     # discord core
     "discord", "app_commands", "commands", "tasks",
 
     # discord types
-    "Interaction", "Embed", "AllowedMentions", "app_commands",
+    "Interaction", "Embed", "AllowedMentions", "app_commands", "View", "Button",
 
     # dotenv
     "load_dotenv",

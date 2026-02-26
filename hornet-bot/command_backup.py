@@ -1,4 +1,4 @@
-"""
+
 # /help
 @bot.tree.command(name="help", description="Affiche toutes les commandes disponibles")
 async def help_command(interaction: discord.Interaction):
@@ -373,4 +373,3 @@ async def test_command(interaction: discord.Interaction):
     embed = discord.Embed(title=t("core.info.test"), color=discord.Color.pink())
     embed.timestamp = date_now()
     await send_with_warning(interaction, embeds=[embed])
-"""
