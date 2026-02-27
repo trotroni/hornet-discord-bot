@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 t = lang_manager.translation_key
 
 def load_reactions():
-    with open("reactions.json", "r", encoding="utf-8") as f:
+    with open("/home/trotroni/nude-discord-bot/hornet-bot/reactions.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
 REACTION_TOPICS = load_reactions()
