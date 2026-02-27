@@ -1,4 +1,5 @@
 # common/utils.py
+from common.imports import *
 from common.config import CONFIG_CORE, CONFIG_GENERAL
 from datetime import datetime, timezone
 from common.langManager import lang_manager
@@ -384,3 +385,49 @@ def load_playlists():
         except Exception as e:
             logger.error(f"❌ Erreur lecture playlists : {e}")
             playlists = {}
+
+# utils pour fan controle
+CONFIG_PATH = "/etc/fan/fan.conf"
+
+#CONFIG_PATH = "/data/fan.conf"
+
+def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
+    lines = []
+    lines.append("debug=false\n\n")
+    lines.append("main:\n")
+
+    for i in range(steps + 1):
+        T = temp_min + (temp_max - temp_min) * i / steps
+        x = (T - temp_min) / (temp_max - temp_min)
+        pwm = pwm_min + (pwm_max - pwm_min) * (math.exp(k*x) - 1) / (math.exp(k) - 1)
+        lines.append(f"    {round(T,1)}={round(pwm)}\n")
+
+    lines.append("\ndebug:\n")
+    lines.append("    1=100\n")
+
+    return "".join(lines)
+
+
+def write_config(content: str):
+    with open(CONFIG_PATH, "w") as f:
+        f.write(content)
+
+
+class FanConfirmView(View):
+    def __init__(self, config_content):
+        super().__init__(timeout=False)
+        self.config_content = config_content
+        self.applied = False
+        #self.timer = False
+
+    @discord.ui.button(label="Confirmer ✅", style=discord.ButtonStyle.green)
+    async def confirm(self, interaction: discord.Interaction, button: Button):
+        write_config(self.config_content)
+        self.applied = True
+        await interaction.response.edit_message(content="✅ Configuration appliquée !", embed=None, view=None)
+        self.stop()
+
+    @discord.ui.button(label="Annuler ❌", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.edit_message(content="❌ Configuration annulée.", embed=None, view=None)
+        self.stop()

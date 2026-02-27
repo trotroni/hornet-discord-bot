@@ -8,7 +8,6 @@ from common.utils import *
 bot, CONFIG, logger = create_bot("core")
 guild_obj = discord.Object(id=CONFIG["GUILD_ID"])
 START_TIME = date_now()
-load_custom_commands()
 
 voice_client: discord.VoiceClient | None = None
 
@@ -130,6 +129,8 @@ async def on_message(message: discord.Message):
     if message.author.bot:
         return
 
+    author = message.author
+    user = author.name  # pour les logs
     content = message.content.lower()
 
     # =========================
@@ -148,11 +149,13 @@ async def on_message(message: discord.Message):
 
                 if reply["type"] == "text":
                     await message.channel.send(reply["content"])
+                    logger.info(f"Hornet a repondu a {user} avec texte: {reply['content']}")
 
                 elif reply["type"] == "gif":
                     embed = discord.Embed()
                     embed.set_image(url=reply["content"])
                     await message.channel.send(embed=embed)
+                    logger.info(f"Hornet a repondu a {user} avec gif: {reply['content']}")
 
             return
 
@@ -174,14 +177,19 @@ async def on_message(message: discord.Message):
 
                 if reply["type"] == "text":
                     await message.channel.send(reply["content"])
+                    logger.info(f"Hornet a repondu a {user} avec texte: {reply['content']}")
 
                 elif reply["type"] == "gif":
                     embed = discord.Embed()
                     embed.set_image(url=reply["content"])
                     await message.channel.send(embed=embed)
+                    logger.info(f"Hornet a repondu a {user} avec gif: {reply['content']}")
 
             message_count = 0
             next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
+
+    # commande balisée <...>
+
 
     await bot.process_commands(message)
 
@@ -192,7 +200,6 @@ async def hornet_status_task():
     status_message = random.choice(HORNET_QUOTES)
     # Change le status du bot
     await bot.change_presence(activity=discord.Game(name=status_message))
-
 
 @tasks.loop(minutes=60)
 async def cpu_temp_task():
@@ -267,61 +274,20 @@ async def before_hornet_task():
 
 # ---------------- COMMANDES SLASH ----------------
 
-CONFIG_PATH = "/etc/fan/fan.conf"
-
-def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
-    lines = []
-    lines.append("debug=false\n\n")
-    lines.append("Main:\n")
-
-    for i in range(steps + 1):
-        T = temp_min + (temp_max - temp_min) * i / steps
-        x = (T - temp_min) / (temp_max - temp_min)
-        pwm = pwm_min + (pwm_max - pwm_min) * (math.exp(k*x) - 1) / (math.exp(k) - 1)
-        lines.append(f"    {round(T,1)}={round(pwm)}\n")
-
-    lines.append("\nDebug:\n")
-    lines.append("    1=100\n")
-
-    return "".join(lines)
-
-
-def write_config(content: str):
-    with open(CONFIG_PATH, "w") as f:
-        f.write(content)
-
-
-class FanConfirmView(View):
-    def __init__(self, config_content):
-        super().__init__(timeout=60)
-        self.config_content = config_content
-        self.applied = False
-
-    @discord.ui.button(label="Confirmer ✅", style=discord.ButtonStyle.green)
-    async def confirm(self, interaction: discord.Interaction, button: Button):
-        write_config(self.config_content)
-        self.applied = True
-        await interaction.response.edit_message(content="✅ Configuration appliquée !", embed=None, view=None)
-        self.stop()
-
-    @discord.ui.button(label="Annuler ❌", style=discord.ButtonStyle.red)
-    async def cancel(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.edit_message(content="❌ Configuration annulée.", embed=None, view=None)
-        self.stop()
-
-
 @bot.tree.command(name="fanconfig", description="Génère une configuration de ventilateur personnalisée")
 @commands.has_permissions(administrator=True)
-async def fanconfig(ctx, temp_min: float, temp_max: float, pwm_min: int, pwm_max: int):
+async def fanconfig(interaction: discord.Interaction, temp_min: float, temp_max: float, pwm_min: int, pwm_max: int):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     try:
         if temp_min >= temp_max:
-            await ctx.send("❌ temp_min doit être inférieur à temp_max")
+            await interaction.followup.send("❌ temp_min doit être inférieur à temp_max")
             return
         if pwm_min >= pwm_max:
-            await ctx.send("❌ pwm_min doit être inférieur à pwm_max")
+            await interaction.followup.send("❌ pwm_min doit être inférieur à pwm_max")
             return
         if not (0 <= pwm_min <= 100 and 0 <= pwm_max <= 100):
-            await ctx.send("❌ PWM doit être entre 0 et 100")
+            await interaction.followup.send("❌ PWM doit être entre 0 et 100")
             return
 
         config_content = generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max)
@@ -333,15 +299,17 @@ async def fanconfig(ctx, temp_min: float, temp_max: float, pwm_min: int, pwm_max
             color=discord.Color.blue()
         )
         view = FanConfirmView(config_content)
-        await ctx.send(embed=embed, view=view)
+        await interaction.followup.send(embed=embed, view=view)
 
     except Exception as e:
-        await ctx.send(f"❌ Erreur : {e}")
+        await interaction.followup.send(f"❌ Erreur : {e}")
 
 
 @bot.tree.command(name="fanpanic", description="Applique une configuration de ventilateur en mode PANIC (100% dès 1°C)")
 @commands.has_permissions(administrator=True)
-async def fanpanic(ctx):
+async def fanpanic(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     try:
         content = (
             "debug=true\n\n"
@@ -358,10 +326,10 @@ async def fanpanic(ctx):
             color=discord.Color.red()
         )
         view = FanConfirmView(content)
-        await ctx.send(embed=embed, view=view)
+        await interaction.followup.send(embed=embed, view=view)
 
     except Exception as e:
-        await ctx.send(f"❌ Erreur : {e}")
+        await interaction.followup.send(f"❌ Erreur : {e}")
 
 # ---------------- Lecture suivante interne ----------------
 async def _play_next(interaction: discord.Interaction):
@@ -869,31 +837,33 @@ async def language_command(interaction: discord.Interaction, lang: str = None):
 
 @bot.tree.command(name="addkeyword", description="Ajoute un mot-clé à un sujet de réaction")
 @commands.has_permissions(administrator=True)
-async def addkeyword(ctx, topic: str, *, keyword: str):
-
+async def addkeyword(interaction: discord.Interaction, topic: str, *, keyword: str):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     topic = topic.lower()
 
     if topic not in REACTION_TOPICS:
-        await ctx.send(f"❌ Sujet `{topic}` introuvable.")
+        await interaction.followup.send(f"❌ Sujet `{topic}` introuvable.")
         return
 
     REACTION_TOPICS[topic]["keywords"].append(keyword.lower())
 
-    await ctx.send(f"✅ Mot-clé `{keyword}` ajouté au sujet `{topic}`.")
+    await interaction.followup.send(f"✅ Mot-clé `{keyword}` ajouté au sujet `{topic}`.")
 
 @bot.tree.command(name="addresponse", description="Ajoute une réponse à un sujet de réaction")
 @commands.has_permissions(administrator=True)
-async def addresponse(ctx, topic: str, rtype: str, *, content: str):
-
+async def addresponse(interaction: discord.Interaction, topic: str, rtype: str, *, content: str):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
     topic = topic.lower()
     rtype = rtype.lower()
 
     if topic not in REACTION_TOPICS:
-        await ctx.send("❌ Sujet introuvable.")
+        await interaction.followup.send("❌ Sujet introuvable.")
         return
 
     if rtype not in ["text", "gif"]:
-        await ctx.send("❌ Type invalide (text/gif).")
+        await interaction.followup.send("❌ Type invalide (text/gif).")
         return
 
     REACTION_TOPICS[topic]["responses"].append({
@@ -901,7 +871,7 @@ async def addresponse(ctx, topic: str, rtype: str, *, content: str):
         "content": content
     })
 
-    await ctx.send(f"✅ Réponse ajoutée au sujet `{topic}`.")
+    await interaction.followup.send(f"✅ Réponse ajoutée au sujet `{topic}`.")
 
 if __name__ == "__main__":
     bot.run(CONFIG["TOKEN"])
