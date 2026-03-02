@@ -24,23 +24,6 @@ async def on_ready():
 
     logger.info("✅ Core bot prêt")
 
-    # message envoyé au demarrage
-    """
-    channel = bot.get_channel(1417564003760082978)
-
-    if channel is None:
-        logger.debug("❌ Channel général introuvable")
-        return
-
-    embed = discord.Embed(
-        title="C'est bon !",
-        description="J'en ai marre !",
-        color=discord.Color.green()
-    )
-    embed.timestamp = discord.utils.utcnow()
-
-    await channel.send(embed=embed)
-    """
     # démarrage task cpu
     if not cpu_temp_task.is_running():
         cpu_temp_task.start()
@@ -60,9 +43,15 @@ t = lang_manager.translation_key
 
 load_playlists()
 
-# -------- CONFIG --------
-MIN_MESSAGES = 15   # x
-MAX_MESSAGES = 40   # y
+# ----------------- EMOJIS -----------------
+EMOJIS = {
+    "hornet": "<:hornet:1478096482425901058>",
+    "hollowknight": "<:hollowknight:1426114181396041799>"
+}
+
+# ----------------- HORNET CONFIG -----------------
+MIN_MESSAGES = 15
+MAX_MESSAGES = 40
 
 HORNET_QUOTES = [
     "SHAW !",
@@ -78,120 +67,107 @@ HORNET_TRIGGERS = [
     "shaw",
     "adino",
     "hegale",
-    "hega"
+    "hega",
     "git gud",
-    "gitgut"
+    "gitgut",
     "hornet"
 ]
-# ------------------------
-
 
 message_count = 0
-next_trigger = randint(MIN_MESSAGES, MAX_MESSAGES)
+next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
+last_hornet_message = None  # Stocker le dernier message de Hornet pour les replies
 
-"""
+# ----------------- EVENT -----------------
 @bot.event
 async def on_message(message: discord.Message):
-    global message_count, next_trigger
+    global message_count, next_trigger, last_hornet_message
 
     if message.author.bot:
+        # Si on reply à Hornet, renvoyer un message avec emoji
+        if message.reference and message.reference.resolved == last_hornet_message:
+            await message.reply(f"{random.choice(HORNET_QUOTES)} {EMOJIS['hollowknight']}")
         return
 
     content = message.content.lower()
 
-    # Trigger direct Hornet
+    # ----------------- TRIGGERS -----------------
+    # 1️⃣ Mot-clé dans le texte
     if any(trigger in content for trigger in HORNET_TRIGGERS):
-        reply = random.choice(HORNET_QUOTES)
-        await message.channel.send(reply)
+        sent = await message.channel.send(f"{random.choice(HORNET_QUOTES)} {EMOJIS['hornet']}")
+        last_hornet_message = sent
         return
 
-    # Compteur
+    # 2️⃣ Mention de Hornet
+    if bot.user in message.mentions:
+        sent = await message.channel.send(f"{random.choice(HORNET_QUOTES)} {EMOJIS['hornet']}")
+        last_hornet_message = sent
+        return
+
+    # ----------------- RANDOM INTERVAL -----------------
     message_count += 1
-    logger.debug(f"[DEBUG] {message_count} / {next_trigger}")
-
     if message_count >= next_trigger:
-        reply = random.choice(HORNET_QUOTES)
-        await message.channel.send(reply)
+        # Déterminer le comportement aléatoire
+        rand = random.random()
+        reply_text = random.choice(HORNET_QUOTES)
 
-        logger.debug(f"[DEBUG] TRIGGERED at {message_count}")
+        if rand < 0.5:
+            # Message normal
+            sent = await message.channel.send(f"{reply_text} {EMOJIS['hornet']}")
+            last_hornet_message = sent
 
+        elif rand < 0.8:
+            # Reply au dernier message Hornet si existant
+            if last_hornet_message:
+                sent = await last_hornet_message.reply(f"{reply_text} {EMOJIS['hollowknight']}")
+                last_hornet_message = sent
+            else:
+                # Sinon message normal
+                sent = await message.channel.send(f"{reply_text} {EMOJIS['hornet']}")
+                last_hornet_message = sent
+
+        else:
+            # Ajouter une reaction au dernier message Hornet si existant
+            if last_hornet_message:
+                await last_hornet_message.add_reaction(EMOJIS["hornet"])
+            else:
+                sent = await message.channel.send(f"{reply_text} {EMOJIS['hornet']}")
+                last_hornet_message = sent
+
+        # Reset compteur
         message_count = 0
         next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
-        logger.debug(f"[DEBUG] New target: {next_trigger}")
 
     await bot.process_commands(message)
-"""
 
+# ----------------- REACTION EVENT -----------------
 @bot.event
-async def on_message(message: discord.Message):
-    global message_count, next_trigger
+async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
 
-    if message.author.bot:
+    if user.bot:
         return
 
-    author = message.author
-    user = author.name  # pour les logs
-    content = message.content.lower()
+    # last_hornet_message existe
+    if last_hornet_message is None:
+        return
 
-    # =========================
-    # PARCOURS DES SUJETS
-    # =========================
-    for topic_name, topic_data in REACTION_TOPICS.items():
+    # reaction message Hornet, Hornet répond en reply ou emoji
+    rand = random.random()
+    reply_text = random.choice(HORNET_QUOTES)
 
-        keywords = topic_data.get("keywords", [])
-        responses = topic_data.get("responses", [])
-
-        # Trigger direct par mot-clé
-        if any(keyword in content for keyword in keywords):
-
-            if responses:
-                reply = random.choice(responses)
-
-                if reply["type"] == "text":
-                    await message.channel.send(reply["content"])
-                    logger.info(f"Hornet a repondu a {user} avec texte: {reply['content']}")
-
-                elif reply["type"] == "gif":
-                    embed = discord.Embed()
-                    embed.set_image(url=reply["content"])
-                    await message.channel.send(embed=embed)
-                    logger.info(f"Hornet a repondu a {user} avec gif: {reply['content']}")
-
-            return
-
-    # =========================
-    # RANDOM INTERVAL (ex-Hornet)
-    # =========================
-
-    hornet = REACTION_TOPICS.get("hornet")
-
-    if hornet and hornet.get("random_interval"):
-
-        message_count += 1
-
-        if message_count >= next_trigger:
-            responses = hornet.get("responses", [])
-
-            if responses:
-                reply = random.choice(responses)
-
-                if reply["type"] == "text":
-                    await message.channel.send(reply["content"])
-                    logger.info(f"Hornet a repondu a {user} avec texte: {reply['content']}")
-
-                elif reply["type"] == "gif":
-                    embed = discord.Embed()
-                    embed.set_image(url=reply["content"])
-                    await message.channel.send(embed=embed)
-                    logger.info(f"Hornet a repondu a {user} avec gif: {reply['content']}")
-
-            message_count = 0
-            next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
-
-    # commande balisée <...>
-
-
-    await bot.process_commands(message)
+    try:
+        if rand < 0.5:
+            # Message normal
+            sent = await last_hornet_message.channel.send(f"{reply_text} {EMOJIS['hornet']}")
+            last_hornet_message = sent
+        elif rand < 0.8:
+            # Reply
+            sent = await last_hornet_message.reply(f"{reply_text} {EMOJIS['hollowknight']}")
+            last_hornet_message = sent
+        else:
+            # Ajout emoji
+            await last_hornet_message.add_reaction(EMOJIS["hornet"])
+    except discord.Forbidden:
+        pass  # erreur de permissions, ignoré
 
 # -------------- TÂCHES PÉRIODIQUES --------------
 @tasks.loop(minutes=30)
