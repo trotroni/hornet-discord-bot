@@ -314,9 +314,9 @@ async def fanpanic(interaction: discord.Interaction):
     try:
         content = (
             "debug=true\n\n"
-            "Main:\n"
+            "main:\n"
             "    1=100\n\n"
-            "Debug:\n"
+            "debug:\n"
             "    1=100\n"
         )
 
