@@ -388,7 +388,7 @@ def load_playlists():
 
 # utils pour fan controle
 CONFIG_PATH = "/etc/fan/fan.conf"
-CONFIG_PATH_SAVE = "common/data/fan.conf"
+CONFIG_PATH_SAVE = "/home/trotroni/nude-discord-bot/common/data/fan-backup.conf"
 
 def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
     lines = []
