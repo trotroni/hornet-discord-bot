@@ -196,10 +196,11 @@ async def on_message(message: discord.Message):
 # -------------- TÂCHES PÉRIODIQUES --------------
 @tasks.loop(minutes=30)
 async def hornet_status_task():
-    # Choisit une citation aléatoire
-    status_message = random.choice(HORNET_QUOTES)
-    # Change le status du bot
-    await bot.change_presence(activity=discord.Game(name=status_message))
+    if is_panic_mode():
+        await bot.change_presence(activity=discord.Game(name="⚠️ Mode panic ⚠️"))
+    else:
+        status_message = random.choice(HORNET_QUOTES)
+        await bot.change_presence(activity=discord.Game(name=status_message))
 
 @tasks.loop(minutes=60)
 async def cpu_temp_task():
@@ -298,7 +299,7 @@ async def fanconfig(interaction: discord.Interaction, temp_min: float, temp_max:
             description=f"```{config_content}```",
             color=discord.Color.blue()
         )
-        view = FanConfirmView(config_content)
+        view = FanConfirmView(config_content, backup=True)
         await interaction.followup.send(embed=embed, view=view)
 
     except Exception as e:
@@ -325,9 +326,23 @@ async def fanpanic(interaction: discord.Interaction):
             description=f"```{content}```",
             color=discord.Color.red()
         )
-        view = FanConfirmView(content)
+        view = FanConfirmView(content, backup=False)
         await interaction.followup.send(embed=embed, view=view)
 
+    except Exception as e:
+        await interaction.followup.send(f"❌ Erreur : {e}")
+
+@bot.tree.command(name="fanrestore", description="Restaure l'ancienne configuration ventilateur")
+@commands.has_permissions(administrator=True)
+async def fanrestore(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+
+    try:
+        if restore_config():
+            await interaction.followup.send("✅ Ancienne configuration restaurée avec succès !")
+        else:
+            await interaction.followup.send("❌ Aucune sauvegarde trouvée.")
     except Exception as e:
         await interaction.followup.send(f"❌ Erreur : {e}")
 

@@ -388,8 +388,7 @@ def load_playlists():
 
 # utils pour fan controle
 CONFIG_PATH = "/etc/fan/fan.conf"
-
-#CONFIG_PATH = "/data/fan.conf"
+CONFIG_PATH_SAVE = "common/data/fan.conf"
 
 def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
     lines = []
@@ -408,21 +407,40 @@ def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
     return "".join(lines)
 
 
-def write_config(content: str):
+def write_config(content: str, save_backup=True):
+    # Si on doit sauvegarder l'ancienne config
+    if save_backup and os.path.exists(CONFIG_PATH):
+        shutil.copy(CONFIG_PATH, CONFIG_PATH_SAVE)
+
     with open(CONFIG_PATH, "w") as f:
         f.write(content)
 
+def restore_config():
+    if os.path.exists(CONFIG_PATH_SAVE):
+        shutil.copy(CONFIG_PATH_SAVE, CONFIG_PATH)
+        return True
+    return False
+
+def is_panic_mode():
+    if not os.path.exists(CONFIG_PATH):
+        return False
+
+    with open(CONFIG_PATH, "r") as f:
+        for line in f:
+            if line.strip().lower() == "debug=true":
+                return True
+    return False
 
 class FanConfirmView(View):
-    def __init__(self, config_content):
+    def __init__(self, config_content, backup=True):
         super().__init__(timeout=False)
         self.config_content = config_content
         self.applied = False
-        #self.timer = False
+        self.backup = backup
 
     @discord.ui.button(label="Confirmer ✅", style=discord.ButtonStyle.green)
     async def confirm(self, interaction: discord.Interaction, button: Button):
-        write_config(self.config_content)
+        write_config(self.config_content, save_backup=self.backup)
         self.applied = True
         await interaction.response.edit_message(content="✅ Configuration appliquée !", embed=None, view=None)
         self.stop()

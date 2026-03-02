@@ -10,6 +10,7 @@ import subprocess
 import time
 import random
 import math
+import shutil
 from random import randint
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -33,7 +34,7 @@ from dotenv import load_dotenv
 __all__ = [
     # stdlib
     "os", "sys", "csv", "json", "logging", "subprocess", "time", "randint", "random",
-    "math", "datetime", "timedelta", "timezone", "Path", "defaultdict", "Optional",
+    "math", "shutil", "datetime", "timedelta", "timezone", "Path", "defaultdict", "Optional",
 
     # discord core
     "discord", "app_commands", "commands", "tasks",
