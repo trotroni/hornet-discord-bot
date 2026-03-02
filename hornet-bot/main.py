@@ -142,7 +142,7 @@ async def on_message(message: discord.Message):
 # ----------------- REACTION EVENT -----------------
 @bot.event
 async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
-	global last_hornet_message
+    global last_hornet_message
 
     if user.bot:
         return
