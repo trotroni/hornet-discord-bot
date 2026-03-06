@@ -84,8 +84,8 @@ async def on_message(message: discord.Message):
 
     if message.author.bot:
         # Si on reply à Hornet, renvoyer un message avec emoji
-        if message.reference and message.reference.resolved == last_hornet_message:
-            await message.reply(f"{random.choice(HORNET_QUOTES)} {EMOJIS['hollowknight']}")
+        #if message.reference and message.reference.resolved == last_hornet_message:
+            #await message.reply(f"{random.choice(HORNET_QUOTES)} {EMOJIS['hollowknight']}")
         return
 
     content = message.content.lower()
