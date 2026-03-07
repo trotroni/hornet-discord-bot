@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin serveur</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 16px;
+            background: #2563eb;
+            border: none;
+            color: white;
+            border-radius: 6px;
+        }
+        button.danger {
+            background: #dc2626;
+        }
+        button.secondary {
+            background: #334155;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: none;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Administration serveur</h1>
+
+<input id="codeInput" type="number" placeholder="Code HTTP (ex: 503, 404)">
+<button onclick="setCode()">Activer code</button>
+
+<button class="secondary" onclick="disableMode()">Désactiver mode forcé</button>
+
+<button class="danger" onclick="logout()">Supprimer le token</button>
+
+<div id="status"></div>
+
+<script src="admin.js"></script>
+</body>
+</html>

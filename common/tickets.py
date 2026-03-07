@@ -1,6 +1,7 @@
-# tickets.py
-from storage import load_json, save_json, log_event
-from utils import now_iso
+# common/tickets.py
+
+from common.storage import load_json, save_json, log_event
+from common.utils_compta import now_iso
 
 # CRÉATION DE TICKET
 def create_ticket(
@@ -124,23 +125,4 @@ def calcul_solde(user_id):
         "doit": total_doit,
         "recoit": total_recoit,
         "solde": total_recoit - total_doit
-    }
-
-    tickets = load_json("tickets.json")
-
-    doit = 0    
-    recoit = 0
-
-    for ticket in tickets.values():
-        for d in ticket["debiteurs"]:
-            if d["user_id"] == user_id:
-                doit += d["part"]
-
-        if ticket["crediteur_id"] == user_id:
-            recoit += ticket["reste_du"]
-
-    return {
-        "doit": doit,
-        "recoit": recoit,
-        "solde": recoit - doit
     }

@@ -1,0 +1,125 @@
+{
+  "code": "ex",
+  "name": "exemple",
+  "embed": {
+    "bugs" : {
+        "name" : "",
+        "value" : ""
+        },
+    "travaux": {
+      "title": "",
+      "description": ""
+      },
+    "message" : {
+      "title" : "",
+      "description" : "",
+      "add" : {
+        "name" : "",
+        "value" : ""
+        }
+    },
+    "maintenance" : {
+      "title" : "",
+      "description" : ""
+      }
+    },
+  "core": {
+    "general": {
+      "error": "",
+      "missing_argument": "",
+      "invalid_argument": "",
+      "don_t_understand": "",
+      "test" : "",
+      "travaux" : ""
+    },
+    "stat": {
+      "title": "",
+      "members": "",
+      "servers": "",
+      "version": "",
+      "uptime": "",
+      "commands_csv": ""
+    },
+    "ping": {
+      "response": ""
+    },
+    "permission": {
+      "denied": {
+        "general": "",
+        "command": "",
+        "role": ""
+      }
+    },
+    "help": {
+      "title": "",
+      "system": "",
+      "csv": "",
+      "lang": "",
+      "footer": "",
+      "ping": "",
+      "reboot": "",
+      "upgrade": "",
+      "update": "",
+      "create": "",
+      "modif": "",
+      "delete": "",
+      "reload": "",
+      "list": "",
+      "language": ""
+    },
+    "list": {
+      "title": "",
+      "empty": "",
+      "footer": ""
+    },
+    "create": {
+      "exists": "",
+      "success": "",
+      "error": ""
+    },
+    "reload": {
+      "success": "",
+      "error": ""
+    },
+    "upgrade": {
+      "updating": "",
+      "success": "✅ Mise à jour effectuée !\n```\n{output}\n```\nRelance du bot...",
+      "restarting": "♻️ Redémarrage du bot après mise à jour...",
+      "timeout": "❌ Timeout lors de la mise à jour.",
+      "error": "❌ Erreur : {error}"
+    },
+    "reboot": {
+      "message": "🔄 Redémarrage du serveur en cours...",
+      "error": "❌ Erreur lors du redémarrage : {error}"
+    },
+    "bot": {
+      "update_sent": "✅ Notification envoyée !",
+      "update_not_configured": "⚠️ CHANNEL_ID_NOTIF n'est pas configuré.",
+      "update_channel_not_found": "❌ Salon introuvable.",
+      "update_notification": "🔔 Notification de mise à jour du bot !",
+      "update_error": "❌ Erreur : {error}",
+      "online_title": "NUDE est en ligne !",
+      "online_description": "Toutes les configurations sont chargées !",
+      "online_footer": "Démarrage réussi en {end:.2f} secondes."
+    },
+    "language": {
+      "name": "Français",
+      "title": "Langue du bot",
+      "changed": "✅ Langue changée en `{language}` !",
+      "current": "Langue actuelle : `{language}`",
+      "available": "Langues disponibles :",
+      "usage": "Utilisez /language <code> pour changer de langue",
+      "invalid": "❌ Langue `{lang}` non disponible. Utilisez `/language` pour voir les langues disponibles."
+    },
+    "modif": {
+      "not_found": "❌ La commande personnalisée `{name}` n'existe pas.",
+      "no_change": "⚠️ Aucun changement spécifié pour la commande `{name}`.",
+      "name_exists": "❌ Une autre commande du nom `{name}` existe déjà.",
+      "success": "✅ La commande personnalisée `{name}` a été mise à jour avec succès.",
+      "error": "⚠️ Une erreur est survenue lors de la mise à jour de la commande `{name}`."
+    }
+  },
+  "compta": {
+
+  }
+}

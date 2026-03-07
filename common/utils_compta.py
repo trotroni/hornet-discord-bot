@@ -1,10 +1,12 @@
+# common/utils_compta.py
+
 from datetime import datetime
 import json
 import os
 import discord
 from discord.ui import View, Button
 
-DATA_DIR = "data"
+DATA_DIR = "../compta-bot/data"
 
 def now_iso():
     return datetime.utcnow().isoformat()

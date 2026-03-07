@@ -1,0 +1,63 @@
+#!/bin/bash
+
+PWM_CHIP="/sys/class/pwm/pwmchip0"
+PWM="$PWM_CHIP/pwm0"
+
+PWM_GPIO=12
+TACH_GPIO=16
+
+PERIOD_NS=50000   # 20 kHz
+RPM_FILE="/etc/fan/fan_rpm.txt"
+PWM_FILE="/etc/fan/fan_pwm.txt"
+
+# Init PWM si besoin
+init_pwm() {
+    if [ ! -d "$PWM" ]; then
+        echo 0 > "$PWM_CHIP/export"
+        sleep 0.1
+    fi
+    echo $PERIOD_NS > "$PWM/period"
+    echo 1 > "$PWM/enable"
+}
+
+# Lire RPM (2 impulsions par tour)
+read_rpm() {
+    local count
+    count=$(timeout 1 bash -c "
+        n=0
+        gpio mode $TACH_GPIO in
+        gpio mode $TACH_GPIO up
+        while true; do
+            gpio wfi $TACH_GPIO rising
+            n=\$((n+1))
+        done
+        echo \$n
+    " 2>/dev/null)
+
+    rpm=$((count * 30))
+    echo "$rpm"
+}
+
+# ---- MAIN ----
+
+if [ "$1" = "read" ]; then
+    rpm=$(read_rpm)
+    echo "$rpm"
+    echo "$rpm" > "$RPM_FILE"
+    exit 0
+fi
+
+# PWM manuel
+if [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 0 ] && [ "$1" -le 100 ]; then
+    init_pwm
+    duty=$((PERIOD_NS * $1 / 100))
+    echo $duty > "$PWM/duty_cycle"
+    echo "$1" > "$PWM_FILE"
+    echo "PWM réglé à $1 %"
+    exit 0
+fi
+
+echo "Usage:"
+echo "  fan_pwm <0-100>"
+echo "  fan_pwm read"
+exit 1

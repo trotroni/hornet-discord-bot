@@ -1,8 +1,9 @@
-# storage.py
+# common/storage.py
+
 import json
 import os
 
-DATA_DIR = "data"
+DATA_DIR = "../compta-bot/data"
 
 def _path(filename):
     return os.path.join(DATA_DIR, filename)

@@ -1,0 +1,12 @@
+[Unit]
+Description=Fan automatic control (GPIO12 PWM / GPIO16 TACH)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/fan_autocontrol.sh
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,248 @@
+#!/bin/bash
+
+# =====================================================
+# VARIABLES
+# =====================================================
+
+MODULE="$1"
+ACTION="$2"
+TARGET="$3"
+
+QUIET=false
+for arg in "$@"; do
+  if [[ "$arg" == "--quiet" ]]; then
+    QUIET=true
+  fi
+done
+
+# ---------- Couleurs ----------
+GREEN="\e[32m"
+RED="\e[31m"
+BLUE="\e[34m"
+RESET="\e[0m"
+
+# =====================================================
+# FONCTIONS
+# =====================================================
+
+error() {
+  echo -e "${RED}[ERREUR] $1${RESET}"
+  exit 1
+}
+
+info() {
+  $QUIET && return
+  echo -e "${BLUE}[INFO] $1${RESET}"
+}
+
+success() {
+  $QUIET && return
+  echo -e "${GREEN}[OK] $1${RESET}"
+}
+
+show_help() {
+  echo "Utilisation :"
+  echo "  ServerManager service {enable|disable|start|stop|status|restart} {service|all}"
+  echo "  ServerManager logs {service}"
+  echo "  ServerManager health"
+  echo "  ServerManager gitpull {service|all}"
+  echo "  ServerManager update {service|all}"
+  echo "  ServerManager --quiet ..."
+  echo ""
+  echo "Services disponibles :"
+  for KEY in "${!SERVICES[@]}"; do
+    echo "  $KEY"
+  done
+  exit 0
+}
+
+# =====================================================
+# SERVICES
+# =====================================================
+
+declare -A SERVICES=(
+  [http-server]="http-server.service"
+  [nude-core-bot]="nude-core-bot.service"
+  [nude-compta-bot]="nude-compta-bot.service"
+  [hkmp]="hkmp-server.service"
+)
+
+# Mapping services vers repos
+declare -A SERVICE_REPOS=(
+  [http-server]="suite"
+  [nude-core-bot]="suite"
+  [nude-compta-bot]="suite"
+  [hkmp]="hkmp"
+)
+
+# Repo path
+declare -A SERVICE_PATHS=(
+  [suite]="/home/trotroni/nude-discord-bot"
+  [hkmp]="/home/trotroni/HKMP"
+)
+
+# =====================================================
+# VÉRIFICATION
+# =====================================================
+
+[[ -z "$MODULE" ]] && show_help
+
+# =====================================================
+# MODULE : SERVICE
+# =====================================================
+
+if [[ "$MODULE" == "service" ]]; then
+
+  [[ -z "$ACTION" || -z "$TARGET" ]] && error "Arguments manquants"
+
+  execute_service_action() {
+    KEY="$1"
+    SERVICE="${SERVICES[$KEY]}"
+    [[ -z "$SERVICE" ]] && return
+
+    case "$ACTION" in
+      enable)  sudo systemctl enable "$SERVICE" ;;
+      disable) sudo systemctl disable "$SERVICE" ;;
+      start)   sudo systemctl start "$SERVICE" ;;
+      stop)    sudo systemctl stop "$SERVICE" ;;
+      restart) sudo systemctl restart "$SERVICE" ;;
+      status)  sudo systemctl status "$SERVICE" --no-pager ;;
+      *) error "Action invalide" ;;
+    esac
+
+    info "$ACTION exécuté sur $KEY"
+  }
+
+  if [[ "$TARGET" == "all" ]]; then
+    for KEY in "${!SERVICES[@]}"; do
+      execute_service_action "$KEY"
+    done
+    success "Action '$ACTION' exécutée sur tous les services"
+    exit 0
+  fi
+
+  [[ -z "${SERVICES[$TARGET]}" ]] && error "Service inconnu"
+
+  execute_service_action "$TARGET"
+  success "Terminé"
+  exit 0
+fi
+
+# =====================================================
+# MODULE : LOGS
+# =====================================================
+
+if [[ "$MODULE" == "logs" ]]; then
+  [[ -z "$ACTION" ]] && error "Précise un service"
+  [[ "$ACTION" == "all" ]] && error "Impossible d'afficher les logs pour tous"
+
+  SERVICE="${SERVICES[$ACTION]}"
+  [[ -z "$SERVICE" ]] && error "Service inconnu"
+
+  sudo journalctl -u "$SERVICE" -f
+  exit 0
+fi
+
+# =====================================================
+# MODULE : HEALTH
+# =====================================================
+
+if [[ "$MODULE" == "health" ]]; then
+  for KEY in "${!SERVICES[@]}"; do
+    SERVICE="${SERVICES[$KEY]}"
+    STATUS=$(systemctl is-active "$SERVICE")
+
+    if [[ "$STATUS" == "active" ]]; then
+      echo -e "${GREEN}$KEY : RUNNING${RESET}"
+    else
+      echo -e "${RED}$KEY : STOPPED${RESET}"
+    fi
+  done
+  exit 0
+fi
+
+# =====================================================
+# MODULE : GITPULL
+# =====================================================
+
+if [[ "$MODULE" == "gitpull" ]]; then
+  [[ -z "$ACTION" ]] && error "Précise un service ou 'all'"
+
+  declare -A PULLED_REPOS=()
+
+  git_pull_service() {
+    KEY="$1"
+    REPO="${SERVICE_REPOS[$KEY]}"
+    PATH_DIR="${SERVICE_PATHS[$REPO]}"
+    [[ -z "$PATH_DIR" || -n "${PULLED_REPOS[$REPO]}" ]] && return
+
+    cd "$PATH_DIR" || error "Dossier introuvable : $PATH_DIR"
+    git pull || error "Git pull échoué pour $REPO"
+    PULLED_REPOS[$REPO]=1
+    success "Git pull effectué sur $REPO"
+  }
+
+  if [[ "$ACTION" == "all" ]]; then
+    for KEY in "${!SERVICES[@]}"; do
+      git_pull_service "$KEY"
+    done
+    exit 0
+  fi
+
+  [[ -z "${SERVICES[$ACTION]}" ]] && error "Service inconnu"
+  git_pull_service "$ACTION"
+  exit 0
+fi
+
+# =====================================================
+# MODULE : UPDATE
+# =====================================================
+
+if [[ "$MODULE" == "update" ]]; then
+  [[ -z "$ACTION" ]] && error "Précise un service ou 'all'"
+
+  declare -A UPDATED_REPOS=()
+
+  update_service() {
+    KEY="$1"
+    REPO="${SERVICE_REPOS[$KEY]}"
+    PATH_DIR="${SERVICE_PATHS[$REPO]}"
+    SERVICE="${SERVICES[$KEY]}"
+    [[ -z "$PATH_DIR" || -n "${UPDATED_REPOS[$REPO]}" ]] && return
+
+    info "Mise à jour de $KEY"
+
+    cd "$PATH_DIR" || error "Dossier introuvable : $PATH_DIR"
+    git pull || error "Git pull échoué"
+
+    # Build si projet .NET
+    if ls *.csproj 1> /dev/null 2>&1; then
+      dotnet publish -c Release || error "Build échoué"
+    fi
+
+    sudo systemctl restart "$SERVICE"
+    UPDATED_REPOS[$REPO]=1
+    success "$KEY mis à jour"
+  }
+
+  if [[ "$ACTION" == "all" ]]; then
+    for KEY in "${!SERVICES[@]}"; do
+      update_service "$KEY"
+    done
+    exit 0
+  fi
+
+  [[ -z "${SERVICES[$ACTION]}" ]] && error "Service inconnu"
+  update_service "$ACTION"
+  exit 0
+fi
+
+# =====================================================
+# HELP / INCONNU
+# =====================================================
+
+if [[ "$MODULE" == "help" ]]; then
+  show_help
+fi
+
+show_help
