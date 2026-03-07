@@ -1,3 +1,0 @@
-/0/add 'EPHEMERAL_ERROR' -> c'est a dire les renvoie d'erreurs des commandes en message éphémère
-
-/0/crée playlist en récupérant des playlists YouTube/spotify/deezer
