@@ -6,7 +6,7 @@ const MAX_POINTS = 60; // 60 secondes d'historique
    FETCH STATUS
 ========================= */
 async function fetchStatus() {
-    const res = await fetch('/api/status');
+    const res = await fetch('http://server64.taimen-goblin.ts.net:8080/api/status');
     const data = await res.json();
 
     document.getElementById('cpu-temp').textContent = data.cpu_temp;
@@ -25,7 +25,7 @@ async function fetchStatus() {
    FETCH LOGS
 ========================= */
 async function fetchLogs() {
-    const res = await fetch('/api/logs');
+    const res = await fetch('http://server64:8080/api/logs');
     const logs = await res.json();
 
     const container = document.getElementById('logs-container');
