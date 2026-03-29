@@ -78,7 +78,7 @@ next_trigger = random.randint(MIN_MESSAGES, MAX_MESSAGES)
 last_hornet_message = None  # Stocker le dernier message de Hornet pour les replies
 
 # ----------------- EVENT -----------------
-@bot.event
+"""@bot.event
 async def on_message(message: discord.Message):
     global message_count, next_trigger, last_hornet_message
 
@@ -169,6 +169,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
             await last_hornet_message.add_reaction(EMOJIS["hornet"])
     except discord.Forbidden:
         pass  # erreur de permissions, ignoré
+"""
 
 # -------------- TÂCHES PÉRIODIQUES --------------
 @tasks.loop(minutes=30)
