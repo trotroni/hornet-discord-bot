@@ -433,11 +433,35 @@ async def alertanime(interaction: discord.Interaction, url: str):
         title="Alerte anime " + ("mise à jour" if already else "ajoutée"),
         color=discord.Color.green()
     )
-    embed.add_field(name="Anime",           value=parsed["anime_name"],        inline=False)
-    embed.add_field(name="Saison",          value=parsed["season"].capitalize(), inline=True)
-    embed.add_field(name="Langue",          value=parsed["lang"].upper(),       inline=True)
-    embed.add_field(name="Épisodes connus", value=str(episode_count),           inline=True)
-    embed.add_field(name="Vérification",    value="toutes les 60 min",          inline=True)
+    embed.add_field(
+        name="Anime",
+        value=f"`{parsed['anime_name']}`",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Saison",
+        value=f"`{parsed['season'].capitalize()}`",
+        inline=True
+    )
+
+    embed.add_field(
+        name="Langue",
+        value=f"`{parsed['lang'].upper()}`",
+        inline=True
+    )
+
+    embed.add_field(
+        name="Épisodes connus",
+        value=f"`{episode_count}`",
+        inline=True
+    )
+
+    embed.add_field(
+        name="Vérification",
+        value="toutes les `60` min",
+        inline=True
+    )
     embed.timestamp = date_now()
 
     await interaction.followup.send(embed=embed)
