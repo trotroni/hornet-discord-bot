@@ -3,6 +3,11 @@ from common.imports import *
 from common.init import *
 from common.langManager import lang_manager
 from common.utils import *
+import aiohttp
+import re
+import json
+import os
+
 
 ### config
 bot, CONFIG, logger = create_bot("core")
@@ -37,6 +42,16 @@ async def on_ready():
         logger.info("🐝 Task Hornet démarrée")
     else:
         logger.warning("⚠️ Task Hornet déjà en cours")
+
+    # chargement des alertes anime
+    load_anime_alerts()
+
+    # démarrage task anime
+    if not anime_check_task.is_running():
+        anime_check_task.start()
+        logger.info("🎬 Task Anime démarrée")
+    else:
+        logger.warning("⚠️ Task Anime déjà en cours")
 
 # config translation
 t = lang_manager.translation_key
@@ -242,6 +257,126 @@ async def cpu_temp_task():
     await channel.send(embed=embed)
     logger.info(f"✅ Embed CPU envoyé : {title} | Temp: {temp_raw} | PWM: {value_pwm}")
 
+ANIME_ALERTS_FILE = "anime_alerts.json"
+anime_alerts: dict = {}
+
+def load_anime_alerts():
+    global anime_alerts
+    if os.path.exists(ANIME_ALERTS_FILE):
+        with open(ANIME_ALERTS_FILE, "r", encoding="utf-8") as f:
+            anime_alerts = json.load(f)
+        logger.info(f"✅ {len(anime_alerts)} alerte(s) anime chargée(s)")
+
+def save_anime_alerts():
+    with open(ANIME_ALERTS_FILE, "w", encoding="utf-8") as f:
+        json.dump(anime_alerts, f, indent=2, ensure_ascii=False)
+
+def parse_anime_url(url: str) -> dict | None:
+    """Valide et décompose une URL anime-sama."""
+    pattern = r'https?://anime-sama\.[^/]+/catalogue/([^/]+)/([^/]+)/([^/]+)/?'
+    match = re.match(pattern, url.strip())
+    if not match:
+        return None
+
+    anime_slug = match.group(1)   # ex: the-angel-next-door-spoils-me-rotten
+    season     = match.group(2)   # ex: saison2
+    lang       = match.group(3)   # ex: vostfr
+
+    anime_name = anime_slug.replace('-', ' ').title()
+    base_url   = url.strip().rstrip('/')
+    js_url     = f"{base_url}/episodes.js"
+
+    return {
+        "anime_name": anime_name,
+        "season":     season,
+        "lang":       lang,
+        "base_url":   base_url,
+        "js_url":     js_url,
+    }
+
+
+async def fetch_episode_count(js_url: str) -> int | None:
+    """
+    Récupère episodes.js et retourne le nombre d'épisodes.
+    Chaque var epsX = [...] est un lecteur différent, pas un épisode.
+    Le nombre d'épisodes = nombre de liens dans n'importe quel bloc
+    (on prend le max au cas où un lecteur est incomplet).
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(js_url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status != 200:
+                    return None
+                content = await resp.text()
+    except Exception:
+        return None
+
+    # Extraire chaque bloc var epsX = [ ... ];
+    blocks = re.findall(r'var\s+eps\d+\s*=\s*\[(.*?)\];', content, re.DOTALL)
+    if not blocks:
+        return 0
+
+    counts = []
+    for block in blocks:
+        urls = re.findall(r"'https?://[^']+'", block)
+        counts.append(len(urls))
+
+    return max(counts)
+
+@tasks.loop(minutes=30)
+async def anime_check_task():
+    """Vérifie périodiquement les nouveaux épisodes de tous les animes surveillés."""
+    if not anime_alerts:
+        return
+
+    channel_id = CONFIG.get("NOTIF_CHANNEL_ID")
+    if not channel_id:
+        logger.error("❌ NOTIF_CHANNEL_ID non défini — alertes anime impossibles")
+        return
+
+    channel = bot.get_channel(int(channel_id))
+    if not channel:
+        logger.error("❌ Channel anime introuvable (ID incorrect ou bot sans accès)")
+        return
+
+    updated = False
+    for base_url, info in list(anime_alerts.items()):
+        try:
+            new_count = await fetch_episode_count(info["js_url"])
+            if new_count is None:
+                logger.warning(f"⚠️ Impossible de lire episodes.js pour {info['name']}")
+                continue
+
+            if new_count > info["episode_count"]:
+                diff = new_count - info["episode_count"]
+
+                embed = discord.Embed(
+                    title="🎬 Nouveaux épisodes disponibles !",
+                    description=f"**{info['name']}** — {info['season'].capitalize()} ({info['lang'].upper()})",
+                    color=discord.Color.blue()
+                )
+                embed.add_field(name="🆕 Nouveaux", value=f"+{diff} épisode(s)", inline=True)
+                embed.add_field(name="📦 Total",    value=f"{new_count} épisodes",  inline=True)
+                embed.add_field(name="🔗 Lien",     value=base_url,                 inline=False)
+                embed.timestamp = date_now()
+
+                await channel.send(embed=embed)
+                logger.info(f"🎬 {info['name']} : {diff} nouvel(s) épisode(s) détecté(s)")
+
+                anime_alerts[base_url]["episode_count"] = new_count
+                updated = True
+
+        except Exception as e:
+            logger.error(f"❌ Erreur vérification anime {info.get('name', base_url)} : {e}")
+
+    if updated:
+        save_anime_alerts()
+
+
+@anime_check_task.before_loop
+async def before_anime_check_task():
+    await bot.wait_until_ready()
+
 # --- AVANT LE LANCEMENT DU TASK ---
 @cpu_temp_task.before_loop
 async def before_cpu_task():
@@ -252,6 +387,61 @@ async def before_hornet_task():
     await bot.wait_until_ready()
 
 # ---------------- COMMANDES SLASH ----------------
+@bot.tree.command(name="alertanime", description="Surveille les nouveaux épisodes d'un anime sur anime-sama")
+@app_commands.describe(url="URL de la page de l'anime (ex: https://anime-sama.to/catalogue/.../saison1/vostfr/)")
+async def alertanime(interaction: discord.Interaction, url: str):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+
+    # --- Validation URL ---
+    parsed = parse_anime_url(url)
+    if not parsed:
+        embed = discord.Embed(
+            title="❌ URL invalide",
+            description=(
+                "L'URL doit pointer vers une page anime-sama.\n"
+                "Exemple : `https://anime-sama.to/catalogue/nom-anime/saison1/vostfr/`"
+            ),
+            color=discord.Color.red()
+        )
+        await interaction.followup.send(embed=embed)
+        return
+
+    # --- Récupération du nombre d'épisodes actuels ---
+    episode_count = await fetch_episode_count(parsed["js_url"])
+    if episode_count is None:
+        embed = discord.Embed(
+            title="❌ Impossible de lire les épisodes",
+            description="Vérifiez que l'URL est correcte et que la page existe bien.",
+            color=discord.Color.red()
+        )
+        await interaction.followup.send(embed=embed)
+        return
+
+    # --- Déjà surveillé ? ---
+    already = parsed["base_url"] in anime_alerts
+    anime_alerts[parsed["base_url"]] = {
+        "name":          parsed["anime_name"],
+        "season":        parsed["season"],
+        "lang":          parsed["lang"],
+        "episode_count": episode_count,
+        "js_url":        parsed["js_url"],
+    }
+    save_anime_alerts()
+
+    embed = discord.Embed(
+        title="✅ Alerte anime " + ("mise à jour" if already else "ajoutée"),
+        color=discord.Color.green()
+    )
+    embed.add_field(name="🎌 Anime",           value=parsed["anime_name"],        inline=True)
+    embed.add_field(name="📅 Saison",          value=parsed["season"].capitalize(), inline=True)
+    embed.add_field(name="🌐 Langue",          value=parsed["lang"].upper(),       inline=True)
+    embed.add_field(name="📦 Épisodes connus", value=str(episode_count),           inline=True)
+    embed.add_field(name="⏱ Vérification",    value="toutes les 30 min",          inline=True)
+    embed.timestamp = date_now()
+
+    await interaction.followup.send(embed=embed)
+
 
 @bot.tree.command(name="fanconfig", description="Génère une configuration de ventilateur personnalisée")
 @commands.has_permissions(administrator=True)
