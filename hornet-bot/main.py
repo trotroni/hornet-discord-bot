@@ -323,13 +323,13 @@ async def fetch_episode_count(js_url: str) -> int | None:
 
     return max(counts)
 
-@tasks.loop(minutes=30)
+@tasks.loop(minutes=60)
 async def anime_check_task():
     """Vérifie périodiquement les nouveaux épisodes de tous les animes surveillés."""
     if not anime_alerts:
         return
 
-    channel_id = CONFIG.get("NOTIF_CHANNEL_ID")
+    channel_id = 1435747416363106324
     if not channel_id:
         logger.error("❌ NOTIF_CHANNEL_ID non défini — alertes anime impossibles")
         return
@@ -430,14 +430,14 @@ async def alertanime(interaction: discord.Interaction, url: str):
     save_anime_alerts()
 
     embed = discord.Embed(
-        title="✅ Alerte anime " + ("mise à jour" if already else "ajoutée"),
+        title="Alerte anime " + ("mise à jour" if already else "ajoutée"),
         color=discord.Color.green()
     )
-    embed.add_field(name="🎌 Anime",           value=parsed["anime_name"],        inline=True)
-    embed.add_field(name="📅 Saison",          value=parsed["season"].capitalize(), inline=True)
-    embed.add_field(name="🌐 Langue",          value=parsed["lang"].upper(),       inline=True)
-    embed.add_field(name="📦 Épisodes connus", value=str(episode_count),           inline=True)
-    embed.add_field(name="⏱ Vérification",    value="toutes les 30 min",          inline=True)
+    embed.add_field(name="Anime",           value=parsed["anime_name"],        inline=True)
+    embed.add_field(name="Saison",          value=parsed["season"].capitalize(), inline=True)
+    embed.add_field(name="Langue",          value=parsed["lang"].upper(),       inline=True)
+    embed.add_field(name="Épisodes connus", value=str(episode_count),           inline=True)
+    embed.add_field(name="Vérification",    value="toutes les 60 min",          inline=True)
     embed.timestamp = date_now()
 
     await interaction.followup.send(embed=embed)
