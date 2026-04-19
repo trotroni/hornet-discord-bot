@@ -351,13 +351,13 @@ async def anime_check_task():
                 diff = new_count - info["episode_count"]
 
                 embed = discord.Embed(
-                    title="🎬 Nouveaux épisodes disponibles !",
+                    title="Nouveaux épisodes disponibles !",
                     description=f"**{info['name']}** — {info['season'].capitalize()} ({info['lang'].upper()})",
                     color=discord.Color.blue()
                 )
-                embed.add_field(name="🆕 Nouveaux", value=f"+{diff} épisode(s)", inline=True)
-                embed.add_field(name="📦 Total",    value=f"{new_count} épisodes",  inline=True)
-                embed.add_field(name="🔗 Lien",     value=base_url,                 inline=False)
+                embed.add_field(name="Nouveaux", value=f"`+{diff}` épisode(s)", inline=True)
+                embed.add_field(name="Total",    value=f"`{new_count}` épisodes", inline=True)
+                embed.add_field(name="Lien",     value=f"[lien anime]({base_url})", inline=False)
                 embed.timestamp = date_now()
 
                 await channel.send(embed=embed)
@@ -462,6 +462,111 @@ async def alertanime(interaction: discord.Interaction, url: str):
         value="toutes les `60` min",
         inline=True
     )
+    embed.timestamp = date_now()
+
+    await interaction.followup.send(embed=embed)
+
+# /animelist — voir tous les animes surveillés
+@bot.tree.command(name="animelist", description="Liste tous les animes surveillés")
+async def animelist(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+
+    if not anime_alerts:
+        embed = discord.Embed(
+            title="📋 Animes surveillés",
+            description="Aucun anime surveillé pour le moment.\nUtilise `/alertanime` pour en ajouter un.",
+            color=discord.Color.orange()
+        )
+        await interaction.followup.send(embed=embed)
+        return
+
+    embed = discord.Embed(
+        title=f"📋 Animes surveillés ({len(anime_alerts)})",
+        color=discord.Color.blue()
+    )
+
+    for base_url, info in anime_alerts.items():
+        embed.add_field(
+            name=f"🎌 {info['name']}",
+            value=(
+                f"**Saison :** `{info['season'].capitalize()}`\n"
+                f"**Langue :** `{info['lang'].upper()}`\n"
+                f"**Épisodes connus :** `{info['episode_count']}`\n"
+                f"**Lien :** [anime-sama]({base_url})"
+            ),
+            inline=False
+        )
+
+    embed.timestamp = date_now()
+    await interaction.followup.send(embed=embed)
+
+
+# /animechecknow — force la vérification immédiatement (admin)
+@bot.tree.command(name="animechecknow", description="Force la vérification des nouveaux épisodes maintenant")
+@commands.has_permissions(administrator=True)
+async def animechecknow(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
+    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
+
+    if not anime_alerts:
+        await interaction.followup.send("❌ Aucun anime surveillé.")
+        return
+
+    await interaction.followup.send("🔍 Vérification en cours...")
+
+    channel_id = 1435747416363106324
+    channel = bot.get_channel(int(channel_id))
+
+    results = []
+    updated = False
+
+    for base_url, info in list(anime_alerts.items()):
+        try:
+            new_count = await fetch_episode_count(info["js_url"])
+
+            if new_count is None:
+                results.append(f"❌ **{info['name']}** — impossible de lire le JS")
+                continue
+
+            diff = new_count - info["episode_count"]
+
+            if diff > 0:
+                results.append(f"🆕 **{info['name']}** — `+{diff}` épisode(s) (`{info['episode_count']}` → `{new_count}`)")
+
+                if channel:
+                    embed = discord.Embed(
+                        title="Nouveaux épisodes disponibles !",
+                        description=f"**{info['name']}** — {info['season'].capitalize()} ({info['lang'].upper()})",
+                        color=discord.Color.blue()
+                    )
+                    embed.add_field(name="Nouveaux", value=f"`+{diff}` épisode(s)", inline=True)
+                    embed.add_field(name="Total",    value=f"`{new_count}` épisodes",  inline=True)
+                    embed.add_field(name="Lien",     value=f"[lien anime]({base_url})", inline=False)
+                    embed.timestamp = date_now()
+                    await channel.send(embed=embed)
+
+                anime_alerts[base_url]["episode_count"] = new_count
+                updated = True
+
+            elif diff < 0:
+                # Le JS a moins d'entrées qu'avant (rare, lecteur supprimé ?)
+                results.append(f"⚠️ **{info['name']}** — compte réduit ? (`{info['episode_count']}` → `{new_count}`)")
+            else:
+                results.append(f"✅ **{info['name']}** — à jour (`{new_count}` épisodes)")
+
+        except Exception as e:
+            results.append(f"❌ **{info.get('name', base_url)}** — erreur : `{e}`")
+
+    if updated:
+        save_anime_alerts()
+
+    embed = discord.Embed(
+        title="🔍 Résultat de la vérification",
+        description="\n".join(results),
+        color=discord.Color.green() if updated else discord.Color.light_grey()
+    )
+    embed.set_footer(text=f"{len(anime_alerts)} anime(s) vérifié(s)")
     embed.timestamp = date_now()
 
     await interaction.followup.send(embed=embed)
