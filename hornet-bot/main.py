@@ -29,12 +29,12 @@ async def on_ready():
 
     logger.info("✅ Core bot prêt")
 
-    # démarrage task cpu
+    """# démarrage task cpu
     if not cpu_temp_task.is_running():
         cpu_temp_task.start()
         logger.info("🧠 Task CPU démarrée")
     else:
-        logger.warning("⚠️ Task CPU déjà en cours")
+        logger.warning("⚠️ Task CPU déjà en cours")"""
 
     # démarrage task hornet
     if not hornet_status_task.is_running():
@@ -195,7 +195,7 @@ async def hornet_status_task():
         status_message = random.choice(HORNET_QUOTES)
         await bot.change_presence(activity=discord.Game(name=status_message))
 
-@tasks.loop(minutes=60)
+"""@tasks.loop(minutes=60)
 async def cpu_temp_task():
     temp_raw = get_cpu_temperature()
     try:
@@ -256,7 +256,7 @@ async def cpu_temp_task():
     # Envoi de l'embed
     await channel.send(embed=embed)
     logger.info(f"✅ Embed CPU envoyé : {title} | Temp: {temp_raw} | PWM: {value_pwm}")
-
+"""
 ANIME_ALERTS_FILE = "anime_alerts.json"
 anime_alerts: dict = {}
 
@@ -378,9 +378,9 @@ async def before_anime_check_task():
     await bot.wait_until_ready()
 
 # --- AVANT LE LANCEMENT DU TASK ---
-@cpu_temp_task.before_loop
+"""@cpu_temp_task.before_loop
 async def before_cpu_task():
-    await bot.wait_until_ready()
+    await bot.wait_until_ready()"""
 
 @cpu_temp_task.before_loop
 async def before_hornet_task():
