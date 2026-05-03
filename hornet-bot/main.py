@@ -382,9 +382,9 @@ async def before_anime_check_task():
 async def before_cpu_task():
     await bot.wait_until_ready()"""
 
-@cpu_temp_task.before_loop
+"""@cpu_temp_task.before_loop
 async def before_hornet_task():
-    await bot.wait_until_ready()
+    await bot.wait_until_ready()"""
 
 # ---------------- COMMANDES SLASH ----------------
 @bot.tree.command(name="alertanime", description="Surveille les nouveaux épisodes d'un anime sur anime-sama")
