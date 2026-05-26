@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 t = lang_manager.translation_key
 
 def load_reactions():
-    with open("/Users/nitrotek/Documents/hornet-discord-bot/hornet-bot/reactions.json", "r", encoding="utf-8") as f:
+    with open("/home/trotroni/hornet-discord-bot/hornet-bot/reactions.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
 REACTION_TOPICS = load_reactions()
@@ -358,7 +358,7 @@ class MusicControls(discord.ui.View):
 
 
 # fichier de stockage des playlists
-PLAYLIST_FILE = Path("/Users/nitrotek/Documents/nude-discord-bot/common/data/playlists.json")
+PLAYLIST_FILE = Path("/home/trotroni/nude-discord-bot/common/data/playlists.json")
 logger.info(f"path playlist : {PLAYLIST_FILE}")
 
 
@@ -388,7 +388,7 @@ def load_playlists():
 
 # utils pour fan controle
 CONFIG_PATH = "/etc/fan/fan.conf"
-CONFIG_PATH_SAVE = "/Users/nitrotek/Documents/nude-discord-bot/common/data/fan-backup.conf"
+CONFIG_PATH_SAVE = "/home/trotroni/nude-discord-bot/common/data/fan-backup.conf"
 
 def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
     lines = []
