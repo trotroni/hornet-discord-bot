@@ -274,6 +274,7 @@ def save_anime_alerts():
 def parse_anime_url(url: str) -> dict | None:
     """Valide et décompose une URL anime-sama."""
     pattern = r'https?://anime-sama\.[^/]+/catalogue/([^/]+)/([^/]+)/([^/]+)/?'
+    #pattern = r'https?://localhost/catalogue/([^/]+)/([^/]+)/([^/]+)/?'
     match = re.match(pattern, url.strip())
     if not match:
         return None
@@ -323,12 +324,13 @@ async def fetch_episode_count(js_url: str) -> int | None:
 
     return max(counts)
 
-@tasks.loop(minutes=60)
+@tasks.loop(minutes=5)
 async def anime_check_task():
     """Vérifie périodiquement les nouveaux épisodes de tous les animes surveillés."""
     if not anime_alerts:
         return
 
+    ROLE_ID = 1508907509635874856
     channel_id = 1435747416363106324
     if not channel_id:
         logger.error("❌ NOTIF_CHANNEL_ID non défini — alertes anime impossibles")
@@ -360,7 +362,11 @@ async def anime_check_task():
                 embed.add_field(name="Lien",     value=f"[lien anime]({base_url})", inline=False)
                 embed.timestamp = date_now()
 
-                await channel.send(embed=embed)
+                await channel.send(
+                    content=f"<@&{ROLE_ID}>",
+                    embed=embed,
+                    view=NotifyView()
+                )
                 logger.info(f"🎬 {info['name']} : {diff} nouvel(s) épisode(s) détecté(s)")
 
                 anime_alerts[base_url]["episode_count"] = new_count
@@ -515,6 +521,7 @@ async def animechecknow(interaction: discord.Interaction):
 
     await interaction.followup.send("🔍 Vérification en cours...")
 
+    ROLE_ID = 1508907509635874856
     channel_id = 1435747416363106324
     channel = bot.get_channel(int(channel_id))
 
@@ -544,7 +551,11 @@ async def animechecknow(interaction: discord.Interaction):
                     embed.add_field(name="Total",    value=f"`{new_count}` épisodes",  inline=True)
                     embed.add_field(name="Lien",     value=f"[lien anime]({base_url})", inline=False)
                     embed.timestamp = date_now()
-                    await channel.send(embed=embed)
+                    await channel.send(
+                        content=f"<@&{ROLE_ID}>",
+                        embed=embed,
+                        view=NotifyView()
+                    )
 
                 anime_alerts[base_url]["episode_count"] = new_count
                 updated = True
@@ -731,123 +742,6 @@ async def play_command(interaction: discord.Interaction, query: str):
 
     # Stocker le message pour updates live
     player.message = message
-
-# a revoir
-"""
-# ---------------- VOLUME ----------------
-@bot.tree.command(name="volume", description="Change le volume de la musique")
-@app_commands.describe(level="Niveau de volume (0 à 100)")
-async def volume_command(interaction: discord.Interaction, level: int):
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
-
-    embed = discord.Embed(title=t("core.volume.title"), color=discord.Color.green())
-    if not voice_client or not voice_client.is_playing():
-        embed.color = discord.Color.red()
-        embed.description = t("core.volume.nothing")
-    elif level < 0 or level > 100:
-        embed.color = discord.Color.red()
-        embed.description = t("core.volume.invalid")
-    else:
-        audio_queue.set_volume(level / 100)
-        embed.description = t("core.volume.set", level=level)
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
-
-
-# ---------------- ADDLIST ----------------
-@bot.tree.command(name="addlist", description="Ajoute un lien à une playlist existante")
-@app_commands.describe(number="Numéro de la playlist", url="Lien de la musique à ajouter")
-async def addlist_command(interaction: discord.Interaction, number: int, url: str):
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
-
-    playlist = playlists.get(number, [])
-    playlist.append(url)
-    playlists[number] = playlist
-    save_playlists()
-
-    embed = discord.Embed(
-        title=t("core.addlist.title"),
-        description=t("core.addlist.added", number=number, url=url),
-        color=discord.Color.green()
-    )
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
-
-# ---------------- PLAYLIST ----------------
-@bot.tree.command(name="playlist", description="Joue une playlist")
-@app_commands.describe(number="Numéro de la playlist à jouer")
-async def playlist_command(interaction: discord.Interaction, number: int):
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
-
-    playlist = playlists.get(number)
-    embed = discord.Embed(title=t("core.playlist.title"), color=discord.Color.green())
-    if not playlist:
-        embed.color = discord.Color.red()
-        embed.description = t("core.playlist.not_found", number=number)
-    else:
-        for url in playlist:
-            audio = get_audio_source(url)
-            audio_queue.add(audio)
-        embed.description = t("core.playlist.started", number=number, count=len(playlist))
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
-
-# ---------------- LIST ----------------
-@bot.tree.command(name="list", description="Liste les playlists ou leur contenu")
-@app_commands.describe(number="Numéro de la playlist (optionnel)")
-async def list_command(interaction: discord.Interaction, number: int = None):
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
-
-    embed = discord.Embed(title=t("core.list.title"), color=discord.Color.green())
-    if number is None:
-        if not playlists:
-            embed.color = discord.Color.red()
-            embed.description = t("core.list.none")
-        else:
-            embed.description = "\n".join([f"{num}: {len(pl)} liens" for num, pl in playlists.items()])
-    else:
-        pl = playlists.get(number)
-        if not pl:
-            embed.color = discord.Color.red()
-            embed.description = t("core.list.not_found", number=number)
-        else:
-            embed.description = "\n".join([f"{i+1}. {url}" for i, url in enumerate(pl)])
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
-
-# ---------------- DELETELIST ----------------
-@bot.tree.command(name="deletelist", description="Supprime une playlist ou un élément")
-@app_commands.describe(number="Numéro de la playlist", index="Numéro du morceau à supprimer (optionnel)")
-async def deletelist_command(interaction: discord.Interaction, number: int, index: int = None):
-    command_log(interaction.command.name, interaction.user.id, interaction.user.name)
-    await interaction.response.defer(ephemeral=CONFIG["EPHEMERAL_GLOBAL"])
-
-    pl = playlists.get(number)
-    embed = discord.Embed(title=t("core.deletelist.title"), color=discord.Color.green())
-    if not pl:
-        embed.color = discord.Color.red()
-        embed.description = t("core.deletelist.not_found", number=number)
-    elif index is None:
-        del playlists[number]
-        save_playlists()
-        embed.description = t("core.deletelist.deleted", number=number)
-    else:
-        if index < 1 or index > len(pl):
-            embed.color = discord.Color.red()
-            embed.description = t("core.deletelist.invalid_index", number=number, index=index)
-        else:
-            removed = pl.pop(index - 1)
-            playlists[number] = pl
-            save_playlists()
-            embed.description = t("core.deletelist.deleted_item", number=number, index=index, url=removed)
-    embed.timestamp = date_now()
-    await send_with_warning(interaction, embeds=[embed])
-
-"""
 
 # secours pour stats
 """
