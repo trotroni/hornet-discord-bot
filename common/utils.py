@@ -393,7 +393,7 @@ CONFIG_PATH_SAVE = "/Users/nitrotek/Documents/nude-discord-bot/common/data/fan-b
 def generate_fanconfig(temp_min, temp_max, pwm_min, pwm_max, steps=8, k=3):
     lines = []
     lines.append("debug=false\n\n")
-    lines.append("main:\n    1=15\n")
+    lines.append("main:\n    1=10\n")
 
     for i in range(steps + 1):
         T = temp_min + (temp_max - temp_min) * i / steps
